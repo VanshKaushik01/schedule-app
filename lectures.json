@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1752675783498,
+    "subject": "MERN",
+    "room": "1",
+    "day": "Wednesday",
+    "date": "2025-07-16",
+    "slot": "08:00-09:00",
+    "teacher": "abhi",
+    "completed": true
+  },
+  {
+    "id": 1752675842180,
+    "subject": "AI/ML",
+    "room": "1",
+    "day": "Wednesday",
+    "date": "2025-07-16",
+    "slot": "09:00-10:00",
+    "teacher": "abhi",
+    "completed": false
+  }
+]

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Schedule Sync - Teacher Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="teacher.css">
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Schedule Sync</h2>
+        <ul>
+            <li class="active" id="dashboardNav">Dashboard</li>
+            <li id="calendarNav">Calendar</li>
+            <li>ApproveLeave</li>
+            <li>Inbox</li>
+        </ul>
+        <div class="current-view">Current View</div>
+        <button class="nav-btn" id="meetingBtn">Meeting</button>
+        <button class="nav-btn" id="schedulingBtn">Scheduling</button>
+        <button class="nav-btn" id="upcomingBtn">Upcoming Event</button>
+    </div>
+    <div class="main">
+        <div class="topbar">
+            <div>
+                <div class="date-time" id="dateToday"></div>
+                <div class="date-time" id="timeNow"></div>
+            </div>
+            <div class="user-info">
+                <span id="teacherName"></span>
+                <span class="icon">👤</span>
+                <button id="logoutBtn" style="margin-left: 16px; background: #e74c3c; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer;">Logout</button>
+            </div>
+        </div>
+        <!-- DASHBOARD CONTENT -->
+        <div id="dashboardPage">
+            <div class="summary">
+                <div class="widget total">
+                    <h3>Total Lectures</h3>
+                    <div class="count" id="totalLectures">0</div>
+                </div>
+                <div class="widget left">
+                    <h3>Total Left</h3>
+                    <div class="count" id="lecturesLeft">0</div>
+                </div>
+                <div class="widget done">
+                    <h3>Total Done</h3>
+                    <div class="count" id="lecturesDone">0</div>
+                </div>
+            </div>
+            <div class="section">
+                <h4>Upcoming Adjustments</h4>
+                <div id="upcomingAdjustments">No adjustments scheduled yet.</div>
+            </div>
+            <div class="section">
+                <h4>Today's Schedules</h4>
+                <div id="todaysSchedules">Upcoming soon...</div>
+            </div>
+            <div class="section">
+                <h4>Adjustment Proposals</h4>
+                <div id="adjustmentProposals">Not scheduled yet.</div>
+            </div>
+        </div>
+        <!-- CALENDAR CONTENT (hidden by default) -->
+        <div id="calendarPage" style="display:none;">
+            <div id="calendar"></div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

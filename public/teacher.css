@@ -1,0 +1,116 @@
+body { 
+  margin: 0; 
+  font-family: 'Segoe UI',sans-serif; 
+  background: #f8f9fb;
+ }
+.sidebar { 
+  width: 220px;
+   background: #fff; 
+   height: 100vh;
+    position: fixed;
+     top: 0; left: 0; 
+     box-shadow: 2px 0 8px #eee; 
+  }
+.sidebar h2 {
+   color: #b14ee6;
+    margin: 24px 0 16px 24px; 
+    font-size: 2rem; 
+  }
+.sidebar ul {
+   list-style: none;
+    padding: 0; 
+    margin: 0; 
+  }
+.sidebar ul li { 
+  padding: 16px 24px;
+   color: #444;
+    cursor: pointer; 
+    display: flex;
+     align-items: center; 
+    }
+.sidebar ul li.active, .sidebar ul li:hover {
+   background: #f0e6fa; 
+   color: #b14ee6;
+   }
+.sidebar .current-view { 
+  margin: 32px 0 0 24px; 
+  font-size: 1.1rem; 
+  color: #888; 
+}
+.sidebar .nav-btn { 
+  margin: 12px 24px; 
+  padding: 12px; 
+  border-radius: 8px;
+   border: none; background: #4f8cff;
+    color: #fff;
+     font-weight: bold; 
+     cursor: pointer; 
+    }
+.main { 
+  margin-left: 240px;
+   padding: 32px 40px;
+   }
+.topbar { 
+  display: flex;
+   justify-content: space-between; 
+   align-items: center;
+    margin-bottom: 32px; 
+  }
+.topbar .date-time { color: #444; }
+.topbar .user-info {
+   display: flex;
+    align-items: center;
+     gap: 12px; 
+    }
+.topbar .user-info .icon { 
+  width: 36px;
+   height: 36px;
+    border-radius: 50%; 
+    background: #eee; 
+    display: flex; 
+    align-items: center;
+     justify-content: center;
+      font-size: 1.5rem;
+     }
+.summary {
+   display: flex;
+    gap: 24px;
+     margin-bottom: 32px; 
+    }
+.summary .widget { 
+  flex: 1; 
+  background: #fff;
+   border-radius: 12px; 
+   padding: 24px;
+    box-shadow: 0 2px 8px #eee; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+  }
+.summary .widget h3 {
+   margin: 0 0 8px 0; 
+   font-size: 1.2rem; 
+   color: #888; 
+  }
+.summary .widget .count { 
+  font-size: 2.2rem;
+   font-weight: bold;
+   }
+.summary .widget.total { color: #4f8cff; }
+.summary .widget.left { color: #b14ee6; }
+.summary .widget.done { color: #27ae60; }
+.section {
+   background: #fff; 
+   border-radius: 12px;
+    padding: 24px; 
+    margin-bottom: 24px; 
+    box-shadow: 0 2px 8px #eee;
+   }
+.section h4 { margin: 0 0 12px 0; }
+#calendar { 
+  background: #fff;
+   border-radius: 12px; 
+   padding: 16px;
+    box-shadow: 0 2px 8px #eee;
+     margin-top: 24px;
+     }

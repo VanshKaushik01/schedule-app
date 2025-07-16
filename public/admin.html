@@ -26,7 +26,17 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="subject">Subject:</label>
-                            <input type="text" id="subject" name="subject" required>
+                            <select id="subject" name="subject" required>
+                                <option value="">Select Subject</option>
+                                <option value="MERN">MERN</option>
+                                <option value="AI/ML">AI/ML</option>
+                                <option value="DSA">DSA</option>
+                                <option value="C++">C++</option>
+                                <option value="Java">Java</option>
+                                <option value="C">C</option>
+                                <option value="Python">Python</option>
+                                <option value="Networking">Networking</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label for="room">Room No.:</label>
@@ -67,6 +77,14 @@
                             <option value="14:00-15:00">14:00-15:00</option>
                             <option value="15:00-16:00">15:00-16:00</option>
                             <option value="16:00-17:00">16:00-17:00</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="teacher">Teacher:</label>
+                        <select id="teacher" name="teacher" required>
+                            <option value="">Select Teacher</option>
+                            <!-- Populated by JS -->
                         </select>
                     </div>
                     
