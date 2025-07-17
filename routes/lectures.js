@@ -51,6 +51,7 @@ router.post('/', (req, res) => {
 router.post('/:id/complete', (req, res) => {
     const id = parseInt(req.params.id);
     let lectures = readData(LECTURES_FILE);
+    
     const idx = lectures.findIndex(l => l.id === id);
     if (idx === -1) return res.status(404).json({ error: 'Lecture not found' });
     lectures[idx].completed = true;
