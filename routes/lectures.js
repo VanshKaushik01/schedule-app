@@ -3,13 +3,13 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const router = express.Router();
-const { authenticateJWT } = require('./auth');
+const { authenticateSession } = require('./auth');
 
-const LECTURES_FILE = path.join(__dirname, '../lectures.json');
+const lecture_file = path.join(__dirname, '../lectures.json');
 
 // Helper functions
 function readData(file) {
-    if (!fs.existsSync(file)) return [];
+    if (!fs.existsSync(file)) return {};
     return JSON.parse(fs.readFileSync(file, 'utf-8'));
 }
 function writeData(file, data) {
@@ -17,12 +17,13 @@ function writeData(file, data) {
 }
 
 // All routes below require authentication
-router.use(authenticateJWT);
+router.use(authenticateSession);
 
 // Get lectures (optionally filter by teacher)
 router.get('/', (req, res) => {
     const { teacher } = req.query;
-    let lectures = readData(LECTURES_FILE);
+    const lecturesObj = readData(lecture_file);
+    let lectures = Object.values(lecturesObj);
     if (teacher) {
         lectures = lectures.filter(l => l.teacher === teacher);
     }
@@ -35,47 +36,45 @@ router.post('/', (req, res) => {
     if (!subject || !room || !day || !date || !slot || !teacher) {
         return res.status(400).json({ error: 'All fields required' });
     }
-    let lectures = readData(LECTURES_FILE);
-    // Prevent overlap
-    if (lectures.some(l => l.day === day && l.date === date && l.slot === slot && l.teacher === teacher)) {
-        return res.status(409).json({ error: 'Lecture already scheduled for this slot/teacher' });
+    let lecturesObj = readData(lecture_file);
+    // Prevent overlap: no two lectures in same room, day, slot
+    const conflict = Object.values(lecturesObj).some(l => l.room === room && l.day === day && l.slot === slot);
+    if (conflict) {
+        return res.status(409).json({ error: 'Lecture already scheduled in this room, day, and slot' });
     }
     const id = Date.now();
     const newLecture = { id, subject, room, day, date, slot, teacher, completed: false };
-    lectures.push(newLecture);
-    writeData(LECTURES_FILE, lectures);
+    lecturesObj[id] = newLecture;
+    writeData(lecture_file, lecturesObj);
     res.json(newLecture);
 });
 
 // Mark lecture as completed
 router.post('/:id/complete', (req, res) => {
-    const id = parseInt(req.params.id);
-    let lectures = readData(LECTURES_FILE);
-    
-    const idx = lectures.findIndex(l => l.id === id);
-    if (idx === -1) return res.status(404).json({ error: 'Lecture not found' });
-    lectures[idx].completed = true;
-    writeData(LECTURES_FILE, lectures);
+    const id = req.params.id;
+    let lecturesObj = readData(lecture_file);
+    if (!lecturesObj[id]) return res.status(404).json({ error: 'Lecture not found' });
+    lecturesObj[id].completed = true;
+    writeData(lecture_file, lecturesObj);
     res.json({ success: true });
 });
 
 // Delete lecture
 router.delete('/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    let lectures = readData(LECTURES_FILE);
-    const initialLength = lectures.length;
-    lectures = lectures.filter(l => l.id !== id);
-    if (lectures.length === initialLength) {
+    const id = req.params.id;
+    let lecturesObj = readData(lecture_file);
+    if (!lecturesObj[id]) {
         return res.status(404).json({ error: 'Lecture not found' });
     }
-    writeData(LECTURES_FILE, lectures);
+    delete lecturesObj[id];
+    writeData(lecture_file, lecturesObj);
     res.json({ success: true });
 });
 
 // Get lecture counts for a teacher
 router.get('/counts/:teacher', (req, res) => {
     const teacher = req.params.teacher;
-    const lectures = readData(LECTURES_FILE).filter(l => l.teacher === teacher);
+    const lectures = Object.values(readData(lecture_file)).filter(l => l.teacher === teacher);
     const total = lectures.length;
     const completed = lectures.filter(l => l.completed).length;
     const left = total - completed;

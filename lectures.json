@@ -1,5 +1,5 @@
-[
-  {
+{
+  "1752675783498": {
     "id": 1752675783498,
     "subject": "MERN",
     "room": "1",
@@ -9,14 +9,24 @@
     "teacher": "abhi",
     "completed": true
   },
-  {
-    "id": 1752675842180,
-    "subject": "AI/ML",
-    "room": "1",
-    "day": "Wednesday",
-    "date": "2025-07-16",
-    "slot": "09:00-10:00",
+  "1752739303677": {
+    "id": 1752739303677,
+    "subject": "MERN",
+    "room": "6",
+    "day": "Tuesday",
+    "date": "2025-07-17",
+    "slot": "08:00-09:00",
     "teacher": "abhi",
     "completed": false
+  },
+  "1752739334415": {
+    "id": 1752739334415,
+    "subject": "AI/ML",
+    "room": "6",
+    "day": "Tuesday",
+    "date": "2025-07-17",
+    "slot": "08:00-09:00",
+    "teacher": "mahesh",
+    "completed": false
   }
-]
+}
