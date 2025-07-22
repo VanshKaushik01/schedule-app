@@ -3,6 +3,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const session = require('express-session');
+// const ejs=require("ejs");                      
 
 const app = express();
 const PORT = 3000;
@@ -17,6 +18,7 @@ app.use(session({
     saveUninitialized: false,
     cookie: { secure: false } // Set to true if using HTTPS
 }));
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'public/views'));
 app.use(express.static(path.join(__dirname, 'public')));

@@ -8,13 +8,13 @@ let currentUser = null;
 
 document.addEventListener('DOMContentLoaded', async function() {
     const currentPage = window.location.pathname.split('/').pop();
-    if (currentPage === 'index.html' || currentPage === '') {
+    if (currentPage === 'index.ejs' || currentPage === '') {
         initializeLoginPage();
-    } else if (currentPage === 'signup.html') {
+    } else if (currentPage === 'signup.ejs') {
         initializeSignupPage();
-    } else if (currentPage === 'admin.html') {
+    } else if (currentPage === 'admin.ejs') {
         await initializeAdminPage();
-    } else if (currentPage === 'teacher.html') {
+    } else if (currentPage === 'teacher.ejs') {
         await initializeTeacherPage();
     }
 });
@@ -44,9 +44,9 @@ async function handleLogin(event) {
         });
         currentUser = user;
         if (user.role === 'admin') {
-            window.location.href = 'admin.html';
+            window.location.href = 'admin.ejs';
         } else if (user.role === 'teacher') {
-            window.location.href = 'teacher.html';
+            window.location.href = 'teacher.ejs';
         }
     } catch (err) {
         alert(err.message);
@@ -101,7 +101,7 @@ async function initializeAdminPage() {
         const user = await api('/api/me', { credentials: 'include' });
         currentUser = user;
     } catch {
-        window.location.href = 'index.html';
+        window.location.href = 'index.ejs';
         return;
     }
     if (!currentUser || currentUser.role !== 'admin') {
