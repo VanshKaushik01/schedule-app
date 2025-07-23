@@ -125,6 +125,10 @@
     box-shadow: 0 2px 8px #eee;
      margin-top: 24px;
      }
+     #approveLeaveSection{
+        margin-left: 150px;
+        margin-top: 50px;
+     }
     </style>
 </head>
 <body>
@@ -133,7 +137,7 @@
         <ul>
             <li class="active" id="dashboardNav">Dashboard</li>
             <li id="calendarNav">Calendar</li>
-            <li>ApproveLeave</li>
+            <li class="" id="approveLeaveNav">ApproveLeave</li>
             <li>Inbox</li>
         </ul>
         <div class="current-view">Current View</div>
@@ -149,7 +153,8 @@
             </div>
             <div class="user-info">
                 <span id="teacherName"></span>
-                <span class="icon">👤</span>
+                <img id="teacherProfileImage" src="" alt="Profile Image" style="display:none;width:36px;height:36px;border-radius:50%;object-fit:cover;">
+                <span class="icon" id="teacherIcon">👤</span>
                 <button id="logoutBtn" style="margin-left: 16px; background: #e74c3c; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer;">Logout</button>
             </div>
         </div>
@@ -181,6 +186,24 @@
                 <h4>Adjustment Proposals</h4>
                 <div id="adjustmentProposals">Not scheduled yet.</div>
             </div>
+            <!-- Approve Leave Section -->
+            <div class="section" id="approveLeaveSection" style="display:none;">
+                <h4>Approve Leave Requests</h4>
+                <table id="leaveRequestsTable" style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr>
+                            <th>Teacher</th>
+                            <th>Date</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaveRequestsBody">
+                        <tr><td colspan="5">Loading leave requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
         <!-- CALENDAR CONTENT (hidden by default) -->
         <div id="calendarPage" style="display:none;">
@@ -189,5 +212,81 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
     <script src="script.js"></script>
+    <script>
+    // Show profile image if available
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('/api/me', { credentials: 'include' })
+            .then(res => res.json())
+            .then(user => {
+                if (user.profileImage) {
+                    const img = document.getElementById('teacherProfileImage');
+                    img.src = user.profileImage;
+                    img.style.display = 'inline-block';
+                    document.getElementById('teacherIcon').style.display = 'none';
+                }
+                if (user.username) {
+                    document.getElementById('teacherName').textContent = user.username;
+                }
+            });
+        // Fetch and populate leave requests
+        fetch('/api/leave-request', { credentials: 'include' })
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById('leaveRequestsBody');
+                tbody.innerHTML = '';
+                if (!data.length) {
+                    tbody.innerHTML = '<tr><td colspan="5">No leave requests found.</td></tr>';
+                    return;
+                }
+                data.forEach(req => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${req.teacher || '-'}</td>
+                        <td>${req.date || '-'}</td>
+                        <td>${req.reason || '-'}</td>
+                        <td>${req.status || 'Pending'}</td>
+                        <td>
+                            <button onclick="handleLeaveAction('${req.id}','approved')">Approve</button>
+                            <button onclick="handleLeaveAction('${req.id}','rejected')">Reject</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        // Sidebar navigation for ApproveLeave
+        document.getElementById('approveLeaveNav').addEventListener('click', function() {
+            document.getElementById('dashboardPage').style.display = 'none';
+            document.getElementById('calendarPage').style.display = 'none';
+            document.getElementById('approveLeaveSection').style.display = '';
+            setActiveSidebar('approveLeaveNav');
+        });
+        document.getElementById('dashboardNav').addEventListener('click', function() {
+            document.getElementById('dashboardPage').style.display = '';
+            document.getElementById('calendarPage').style.display = 'none';
+            document.getElementById('approveLeaveSection').style.display = 'none';
+            setActiveSidebar('dashboardNav');
+        });
+        document.getElementById('calendarNav').addEventListener('click', function() {
+            document.getElementById('dashboardPage').style.display = 'none';
+            document.getElementById('calendarPage').style.display = '';
+            document.getElementById('approveLeaveSection').style.display = 'none';
+            setActiveSidebar('calendarNav');
+        });
+    });
+    function handleLeaveAction(id, action) {
+        fetch(`/api/leave-request/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ status: action })
+        })
+        .then(res => res.json())
+        .then(() => location.reload());
+    }
+    function setActiveSidebar(activeId) {
+        document.querySelectorAll('.sidebar ul li').forEach(li => li.classList.remove('active'));
+        document.getElementById(activeId).classList.add('active');
+    }
+    </script>
 </body>
 </html>

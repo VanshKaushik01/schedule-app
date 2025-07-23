@@ -1,13 +1,11 @@
-// routes/lectures.js
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const router = express.Router();
-const { authenticateSession } = require('./auth');
+const { authenticateJWT } = require('./auth');
 
 const lecture_file = path.join(__dirname, '../lectures.json');
 
-// Helper functions
 function readData(file) {
     if (!fs.existsSync(file)) return {};
     return JSON.parse(fs.readFileSync(file, 'utf-8'));
@@ -16,8 +14,7 @@ function writeData(file, data) {
     fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
-// All routes below require authentication
-router.use(authenticateSession);
+router.use(authenticateJWT);
 
 // Get lectures (optionally filter by teacher)
 router.get('/', (req, res) => {
@@ -79,6 +76,17 @@ router.get('/counts/:teacher', (req, res) => {
     const completed = lectures.filter(l => l.completed).length;
     const left = total - completed;
     res.json({ total, completed, left });
+});
+
+// Get lectures for a given teacher and date (for adjustment system)
+router.get('/by-date', (req, res) => {
+    const { teacher, date } = req.query;
+    if (!teacher || !date) {
+        return res.status(400).json({ error: 'Teacher and date are required' });
+    }
+    const lecturesObj = readData(lecture_file);
+    const lectures = Object.values(lecturesObj).filter(l => l.teacher === teacher && l.date === date);
+    res.json(lectures);
 });
 
 module.exports = router;

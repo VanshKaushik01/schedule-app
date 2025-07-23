@@ -43,10 +43,10 @@ async function handleLogin(event) {
             credentials: 'include'
         });
         currentUser = user;
-        if (user.role === 'admin') {
-            window.location.href = 'admin.ejs';
-        } else if (user.role === 'teacher') {
+        if (user.role === 'teacher') {
             window.location.href = 'teacher.ejs';
+        } else if (user.role === 'admin') {
+            window.location.href = 'admin.ejs';
         }
     } catch (err) {
         alert(err.message);
@@ -66,7 +66,8 @@ async function handleSignup(event) {
     const form = event.target;
     const formData = new FormData(form);
     const password = formData.get('password');
-    if (!formData.get('username') || !formData.get('email') || !password || !formData.get('role')) {
+    const subject = formData.get('subject');
+    if (!formData.get('username') || !formData.get('email') || !password || !subject) {
         alert('Please fill in all fields');
         return;
     }
@@ -74,6 +75,7 @@ async function handleSignup(event) {
         alert('Password must be at least 6 characters long');
         return;
     }
+    formData.delete('role'); 
     try {
         const res = await fetch('/api/signup', {
             method: 'POST',
@@ -84,11 +86,7 @@ async function handleSignup(event) {
         const user = await res.json();
         currentUser = user;
         alert('Account created successfully!');
-        if (formData.get('role') === 'admin') {
-            window.location.href = 'admin.ejs';
-        } else if (formData.get('role') === 'teacher') {
-            window.location.href = 'teacher.ejs';
-        }
+        window.location.href = 'teacher.ejs';
     } catch (err) {
         alert(err.message);
     }
@@ -120,6 +118,25 @@ async function initializeAdminPage() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout);
     }
+    // Add subject dropdown filter logic
+    const subjectSelect = document.getElementById('subject');
+    const teacherSelect = document.getElementById('teacher');
+    if (subjectSelect && teacherSelect) {
+        subjectSelect.addEventListener('change', async function() {
+            const selectedSubject = subjectSelect.value;
+            if (!selectedSubject) {
+                teacherSelect.innerHTML = '<option value="">Select Teacher</option>';
+                return;
+            }
+            try {
+                const teachers = await api(`/api/teachers?subject=${encodeURIComponent(selectedSubject)}`, { credentials: 'include' });
+                teacherSelect.innerHTML = '<option value="">Select Teacher</option>' +
+                    teachers.map(t => `<option value="${t.username}">${t.username}</option>`).join('');
+            } catch (err) {
+                teacherSelect.innerHTML = '<option value="">No teachers found</option>';
+            }
+        });
+    }
     await populateTeacherDropdown();
     await renderTimetable();
     await renderCalendar();
@@ -128,9 +145,13 @@ async function initializeAdminPage() {
 
 async function populateTeacherDropdown() {
     const teacherSelect = document.getElementById('teacher');
-    if (!teacherSelect) return;
+    const subjectSelect = document.getElementById('subject');
+    let subject = '';
+    if (subjectSelect) subject = subjectSelect.value;
     try {
-        const teachers = await api('/api/teachers', { credentials: 'include' });
+        let url = '/api/teachers';
+        if (subject) url += `?subject=${encodeURIComponent(subject)}`;
+        const teachers = await api(url, { credentials: 'include' });
         teacherSelect.innerHTML = '<option value="">Select Teacher</option>' +
             teachers.map(t => `<option value="${t.username}">${t.username}</option>`).join('');
     } catch (err) {
@@ -167,19 +188,25 @@ async function handleLectureForm(event) {
         } else {
             alert(err.message);
         }
+        console.error('Error adding lecture:', err);
     }
 }
 
 async function renderTimetable() {
     const tableBody = document.getElementById('lectureTableBody');
     const tableHead = document.querySelector('#lectureTable thead');
-    if (!tableBody || !tableHead) return;
+    if (!tableBody || !tableHead) {
+        console.error('Timetable tableBody or tableHead not found');
+        return;
+    }
     let lectures = [];
     try {
         const data = await api('/api/lectures', { credentials: 'include' });
         lectures = Array.isArray(data) ? data : Object.values(data);
+        console.log('Fetched lectures for timetable:', lectures);
     } catch (err) {
         tableBody.innerHTML = '<tr><td colspan="10">Failed to load lectures</td></tr>';
+        console.error('Failed to fetch lectures:', err);
         return;
     }
     // Define slots and weekdays
@@ -189,10 +216,10 @@ async function renderTimetable() {
         '10:00-11:00',
         '11:00-12:00',
         '12:00-13:00',
-        '13:00-14:00',
-        '14:00-15:00',
-        '15:00-16:00',
-        '16:00-17:00'
+        // '13:00-14:00',
+        // '14:00-15:00',
+        // '15:00-16:00',
+        // '16:00-17:00'
     ];
     const weekdays = [
         'Monday',
@@ -209,8 +236,7 @@ async function renderTimetable() {
     weekdays.forEach(day => {
         const row = document.createElement('tr');
         row.innerHTML = `<td><b>${day}</b></td>`;
-        slots.forEach(slot => {
-            // Find lecture for this day/slot
+        slots?.forEach(slot => {
             const lecture = lectures.find(l => l.day === day && l.slot === slot);
             if (lecture) {
                 let actions = `<button class='btn-delete' onclick='deleteLecture(${lecture.id})'>Delete</button>`;
@@ -233,8 +259,10 @@ async function deleteLecture(id) {
         await renderTimetable();
         await renderCalendar();
         await renderLectureCounts();
+        alert('Lecture deleted successfully!');
     } catch (err) {
         alert(err.message);
+        console.error('Error deleting lecture:', err);
     }
 }
 
@@ -304,13 +332,19 @@ async function renderLectureCounts() {
     if (!currentUser) return;
     try {
         const counts = await api(`/api/lectures/counts/${currentUser.username}`, { credentials: 'include' });
-        document.getElementById('totalLectures').textContent = counts.total;
-        document.getElementById('lecturesDone').textContent = counts.completed;
-        document.getElementById('lecturesLeft').textContent = counts.left;
+        const totalEl = document.getElementById('totalLectures');
+        const doneEl = document.getElementById('lecturesDone');
+        const leftEl = document.getElementById('lecturesLeft');
+        if (totalEl) totalEl.textContent = counts.total;
+        if (doneEl) doneEl.textContent = counts.completed;
+        if (leftEl) leftEl.textContent = counts.left;
     } catch (err) {
-        document.getElementById('totalLectures').textContent = '-';
-        document.getElementById('lecturesDone').textContent = '-';
-        document.getElementById('lecturesLeft').textContent = '-';
+        const totalEl = document.getElementById('totalLectures');
+        const doneEl = document.getElementById('lecturesDone');
+        const leftEl = document.getElementById('lecturesLeft');
+        if (totalEl) totalEl.textContent = '-';
+        if (doneEl) doneEl.textContent = '-';
+        if (leftEl) leftEl.textContent = '-';
     }
 }
 
@@ -320,7 +354,7 @@ async function initializeTeacherPage() {
         const user = await api('/api/me', { credentials: 'include' });
         currentUser = user;
     } catch {
-        window.location.href = 'index.html';
+        window.location.href = '/index.ejs';
         return;
     }
     if (!currentUser || currentUser.role !== 'teacher') {
@@ -371,12 +405,17 @@ async function initializeTeacherPage() {
 
 async function renderTeacherTimetable() {
     const tableBody = document.getElementById('lectureTableBody');
-    if (!tableBody) return;
+    if (!tableBody) {
+        console.error('Teacher timetable tableBody not found');
+        return;
+    }
     let lectures = [];
     try {
         lectures = await api(`/api/lectures?teacher=${currentUser.username}`, { credentials: 'include' });
+        console.log('Fetched lectures for teacher timetable:', lectures);
     } catch (err) {
         tableBody.innerHTML = '<tr><td colspan="7">Failed to load lectures</td></tr>';
+        console.error('Failed to fetch teacher lectures:', err);
         return;
     }
     tableBody.innerHTML = '';
@@ -450,7 +489,7 @@ function handleLogout() {
     fetch('/api/logout', { method: 'POST', credentials: 'include' })
         .then(() => {
             currentUser = null;
-            window.location.href = 'index.html';
+            window.location.href = '/index.ejs';
         });
 }
 
@@ -461,9 +500,9 @@ function getSubjectColor(subject) {
         'DSA': '#f39c12',
         'C++': '#27ae60',
         'Java': '#9b59b6',
-        'C': '#e67e22',
-        'Python': '#1abc9c',
-        'Networking': '#34495e'
+        // 'C': '#e67e22',
+        // 'Python': '#1abc9c',
+        // 'Networking': '#34495e'
     };
     return subjectColors[subject] || '#667eea';
 }

@@ -2,8 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
-const session = require('express-session');
-// const ejs=require("ejs");                      
 
 const app = express();
 const PORT = 3000;
@@ -12,23 +10,20 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
-app.use(session({
-    secret: 'your_session_secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { secure: false } // Set to true if using HTTPS
-}));
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'public/views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Use modular routes
-const { router: authRouter } = require('./routes/auth');
+const { router: authRouter, authenticateJWT, readAdjustments, writeAdjustments } = require('./routes/auth');
 const lecturesRouter = require('./routes/lectures');
+const handleLeaveRouter = require('./routes/handleleave');
 
 app.use('/api', authRouter);        
 app.use('/api/lectures', lecturesRouter);
+app.use('/api/adjustments', handleLeaveRouter);
+app.use('/api/leave-request', handleLeaveRouter);
 
 // Render EJS pages for main routes
 app.get('/', (req, res) => res.render('index'));

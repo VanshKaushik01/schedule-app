@@ -16,5 +16,12 @@
     "email": "abhipandit303@gmail.com",
     "password": "12345678",
     "role": "teacher"
+  },
+  "raj": {
+    "username": "raj",
+    "email": "raju@gmail.com",
+    "password": "12345678",
+    "role": "teacher",
+    "profileImage": "f8a12b7f6138de21be6632a4e2147b9f"
   }
 }
