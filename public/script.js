@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 });
 
-// --- Login ---
 function initializeLoginPage() {
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
@@ -53,7 +52,6 @@ async function handleLogin(event) {
     }
 }
 
-// --- Signup ---
 function initializeSignupPage() {
     const signupForm = document.getElementById('signupForm');
     if (signupForm) {
@@ -92,9 +90,7 @@ async function handleSignup(event) {
     }
 }
 
-// --- Admin Dashboard ---
 async function initializeAdminPage() {
-    // Try to get user info from backend (JWT)
     try {
         const user = await api('/api/me', { credentials: 'include' });
         currentUser = user;
@@ -118,7 +114,6 @@ async function initializeAdminPage() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout);
     }
-    // Add subject dropdown filter logic
     const subjectSelect = document.getElementById('subject');
     const teacherSelect = document.getElementById('teacher');
     if (subjectSelect && teacherSelect) {
@@ -140,7 +135,6 @@ async function initializeAdminPage() {
     await populateTeacherDropdown();
     await renderTimetable();
     await renderCalendar();
-    // await renderLectureCounts();
 }
 
 async function populateTeacherDropdown() {
@@ -209,7 +203,6 @@ async function renderTimetable() {
         console.error('Failed to fetch lectures:', err);
         return;
     }
-    // Define slots and weekdays
     const slots = [
         '08:00-09:00',
         '09:00-10:00',
@@ -229,9 +222,7 @@ async function renderTimetable() {
         'Friday',
         'Saturday'
     ];
-    // Update table head
     tableHead.innerHTML = `<tr><th>Day/Slot</th>${slots.map(slot => `<th>${slot}</th>`).join('')}</tr>`;
-    // Build grid
     tableBody.innerHTML = '';
     weekdays.forEach(day => {
         const row = document.createElement('tr');
@@ -348,7 +339,6 @@ async function renderLectureCounts() {
     }
 }
 
-// --- Teacher Dashboard ---
 async function initializeTeacherPage() {
     try {
         const user = await api('/api/me', { credentials: 'include' });
@@ -374,7 +364,6 @@ async function initializeTeacherPage() {
         logoutBtn.addEventListener('click', handleLogout);
     } 
     
-    // Initialize navigation
     const dashboardNav = document.getElementById('dashboardNav');
     const calendarNav = document.getElementById('calendarNav');
     
@@ -393,7 +382,6 @@ async function initializeTeacherPage() {
             await renderTeacherCalendar();
         });
         
-        // Set initial view
         setActiveSidebar('dashboardNav');
         document.getElementById('dashboardPage').style.display = '';
         document.getElementById('calendarPage').style.display = 'none';
@@ -512,6 +500,5 @@ function setActiveSidebar(activeId) {
     document.getElementById(activeId).classList.add('active');
 }
 
-// Make functions available globally for HTML onclick handlers
 window.deleteLecture = deleteLecture;
 window.markLectureCompleted = markLectureCompleted;

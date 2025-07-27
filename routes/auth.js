@@ -1,5 +1,5 @@
 const express = require('express');
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
@@ -18,7 +18,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
     fileFilter: (req, file, cb) => {
         if (!file.mimetype.startsWith('image/')) {
             return cb(new Error('Only image files are allowed!'));
@@ -29,14 +28,17 @@ const upload = multer({
 
 const USERS_FILE = path.join(__dirname, '../users.json');
 
-function readData(file) {
-    if (!fs.existsSync(file)) return {};
-    return JSON.parse(fs.readFileSync(file, 'utf-8'));
+async function readData(file) {
+    try {
+        const data = await fs.readFile(file, 'utf-8');
+        return JSON.parse(data);
+    } catch (err) {
+        return {};
+    }
 }
-function writeData(file, data) {
-    fs.writeFileSync(file, JSON.stringify(data, null, 2));
+async function writeData(file, data) {
+    await fs.writeFile(file, JSON.stringify(data, null, 2));
 }
-
 
 function authenticateJWT(req, res, next) {
     const token = req.cookies.token || req.headers['authorization']?.split(' ')[1];
@@ -48,12 +50,12 @@ function authenticateJWT(req, res, next) {
     });
 }
 
-router.post('/signup', upload.single('profileImage'), (req, res) => {
+router.post('/signup', upload.single('profileImage'), async (req, res) => {
     const { username, email, password, subject } = req.body;
     if (!username || !email || !password || !subject) {
         return res.status(400).json({ error: 'All fields required' });
     }
-    const users = readData(USERS_FILE);
+    const users = await readData(USERS_FILE);
     if (users[username] || Object.values(users).some(u => u.email === email)) {
         return res.status(409).json({ error: 'Username or email already exists' });
     }
@@ -63,26 +65,26 @@ router.post('/signup', upload.single('profileImage'), (req, res) => {
     }
     const role = 'teacher';
     users[username] = { username, email, password, role, subject, profileImage };
-    writeData(USERS_FILE, users);
+    await writeData(USERS_FILE, users);
 
     const token = jwt.sign({ username, role, subject, profileImage }, SECRET, { expiresIn: '1d' });
     res.cookie('token', token, { httpOnly: true });
     res.json({ username, role, subject, profileImage, token });
 });
 
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
     const { username, password } = req.body;
-    const users = readData(USERS_FILE);
+    const users = await readData(USERS_FILE);
     const user = users[username] && users[username].password === password ? users[username] : null;
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-    // Generate JWT
+
     const token = jwt.sign({ username: user.username, role: user.role, profileImage: user.profileImage }, SECRET, { expiresIn: '1d' });
     res.cookie('token', token, { httpOnly: true });
     res.json({ username: user.username, role: user.role, profileImage: user.profileImage, token });
 });
 
-router.get('/teachers', authenticateJWT, (req, res) => {
-    const users = readData(USERS_FILE);
+router.get('/teachers', authenticateJWT, async (req, res) => {
+    const users = await readData(USERS_FILE);
     const { subject } = req.query;
     let teachers = Object.values(users).filter(u => u.role === 'teacher');
     if (subject) {
@@ -96,11 +98,11 @@ router.get('/teachers', authenticateJWT, (req, res) => {
     res.json(teachers);
 });
 
-router.get('/me', authenticateJWT, (req, res) => {
-    const users = readData(USERS_FILE);
+router.get('/me', authenticateJWT, async (req, res) => {
+    const users = await readData(USERS_FILE);
     const user = users[req.user.username];
     if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json({ username: user.username, role: user.role, profileImage: user.profileImage });
+    res.json(user);
 });
 
 
@@ -109,4 +111,7 @@ router.post('/logout', (req, res) => {
     res.json({ message: 'Logged out successfully' });
 });
 
-module.exports = { router, authenticateJWT };
+module.exports = {
+    router,
+    authenticateJWT
+};

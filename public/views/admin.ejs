@@ -2,27 +2,466 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ScheduleSync - Admin Dashboard</title>
-     <link rel="stylesheet" href="../style.css">
-    <link href='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/index.global.min.css' rel='stylesheet' />
-    <link href='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.10/index.global.min.css' rel='stylesheet' />
-    <link href='https://cdn.jsdelivr.net/npm/@fullcalendar/timegrid@6.1.10/index.global.min.css' rel='stylesheet' />
+    <title>Schedule Sync - Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <style>
+        body { 
+            margin: 0; 
+            font-family: 'Segoe UI',sans-serif; 
+            background: #f8f9fb;
+        }
+        .sidebar { 
+            width: 220px;
+            background: #fff; 
+            height: 100vh;
+            position: fixed;
+            top: 0; left: 0; 
+            box-shadow: 2px 0 8px #eee; 
+        }
+        .sidebar h2 {
+            color: #b14ee6;
+            margin: 24px 0 16px 24px; 
+            font-size: 2rem; 
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0; 
+            margin: 0; 
+        }
+        .sidebar ul li { 
+            padding: 16px 24px;
+            color: #444;
+            cursor: pointer; 
+            display: flex;
+            align-items: center; 
+        }
+        .sidebar ul li.active, .sidebar ul li:hover {
+            background: #f0e6fa; 
+            color: #b14ee6;
+        }
+        .sidebar .current-view { 
+            margin: 32px 0 0 24px; 
+            font-size: 1.1rem; 
+            color: #888; 
+        }
+        .sidebar .nav-btn { 
+            margin: 12px 24px; 
+            padding: 12px; 
+            border-radius: 8px;
+            border: none; background: #4f8cff;
+            color: #fff;
+            font-weight: bold; 
+            cursor: pointer; 
+        }
+        .main { 
+            margin-left: 240px;
+            padding: 32px 40px;
+        }
+        .topbar { 
+            display: flex;
+            justify-content: space-between; 
+            align-items: center;
+            margin-bottom: 32px; 
+        }
+        .topbar .date-time { color: #444; }
+        .topbar .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px; 
+        }
+        .topbar .user-info .icon { 
+            width: 36px;
+            height: 36px;
+            border-radius: 50%; 
+            background: #eee; 
+            display: flex; 
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .section {
+            background: #fff; 
+            border-radius: 12px;
+            padding: 24px; 
+            margin-bottom: 24px; 
+            box-shadow: 0 2px 8px #eee;
+        }
+        .section h4 { 
+            margin: 0 0 12px 0; 
+        }
+        #calendar { 
+            background: #fff;
+            border-radius: 12px; 
+            padding: 16px;
+            box-shadow: 0 2px 8px #eee;
+            margin-top: 24px;
+        }
+        .timetable-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .teacher-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .teacher-selector select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .add-timetable-btn {
+            background: #b14ee6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .add-timetable-btn:hover {
+            background: #9a3dd1;
+        }
+        .timetable-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px #eee;
+        }
+        .timetable-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .timetable-table th,
+        .timetable-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        .timetable-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .timetable-table td {
+            background: white;
+        }
+        .lecture-cell {
+            background: #e8f5e8 !important;
+            font-weight: bold;
+        }
+        .add-lecture-form {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px #eee;
+            margin-top: 20px;
+        }
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            flex: 1;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #444;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .submit-btn {
+            background: #4f8cff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+        .submit-btn:hover {
+            background: #3a7bd5;
+        }
+        .hidden {
+            display: none;
+        }
+        .adjustments-info {
+            background: #e8f4fd;
+            border: 1px solid #b3d9ff;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 20px;
+            color: #2c5aa0;
+        }
+        #adjustmentsTable {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        #adjustmentsTable th,
+        #adjustmentsTable td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        #adjustmentsTable th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .adjustment-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .assign-sub-btn {
+            background: #4f8cff;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .resolve-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .substitute-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            width: 400px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <header class="dashboard-header">
-            <h1>Admin Dashboard</h1>
-            <div class="user-info">
-                <span id="userDisplay"></span>
-                <button id="logoutBtn" class="btn-secondary">Logout</button>
+    <div class="sidebar">
+        <h2>Schedule Sync</h2>
+        <ul>
+            <li class="active" id="dashboardNav">Dashboard</li>
+            <li id="addLectureNav">Add Lecture</li>
+            <li id="approveLeaveNav">Approve Leave</li>
+            <li id="adjustmentsNav">Adjustments</li>
+            <li id="inboxNav">Inbox</li>
+        </ul>
+        <div class="current-view">Current View</div>
+        <button class="nav-btn" id="meetingBtn">Meeting</button>
+        <button class="nav-btn" id="schedulingBtn">Scheduling</button>
+        <button class="nav-btn" id="upcomingBtn">Upcoming Event</button>
+    </div>
+    
+    <div class="main">
+        <div class="topbar">
+            <div>
+                <div class="date-time" id="dateToday"></div>
+                <div class="date-time" id="timeNow"></div>
             </div>
-        </header>
-
-        <div class="dashboard-content">
-            <section class="form-section">
-                <h2>Create Lecture Schedule</h2>
-                <form id="lectureForm">
+            <div class="user-info">
+                <span id="adminName">Admin</span>
+                <span class="icon" id="adminIcon">👤</span>
+                <button id="logoutBtn" style="margin-left: 16px; background: #e74c3c; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer;">Logout</button>
+            </div>
+        </div>
+        
+                <div class="timetable-header">
+                <div class="teacher-selector">
+                    <label for="teacherSelect">Select Teacher:</label>
+                    <select id="teacherSelect">
+                        <option value="">All Teachers</option>
+                    </select>
+                </div>
+                <button class="add-timetable-btn" id="addTimetableBtn">Add Timetable</button>
+            </div>
+            
+            <div class="timetable-container">
+                <h3>Time Table</h3>
+                <table class="timetable-table">
+                    <thead>
+                        <tr>
+                            <th>Days/Time</th>
+                            <th>Lecture 1<br>09:00-10:00</th>
+                            <th>Lecture 2<br>10:00-11:00</th>
+                            <th>Lecture 3<br>11:00-12:00</th>
+                            <th>Lecture 4<br>12:00-01:00</th>
+                            <th>Lecture 5<br>01:00-02:00</th>
+                            <th>Lecture 6<br>02:00-03:00</th>
+                            <th>Lecture 7<br>03:00-04:00</th>
+                            <th>Lecture 8<br>04:00-05:00</th>
+                        </tr>
+                    </thead>
+                    <tbody id="timetableBody">
+                        <tr>
+                            <td>Monday</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>Tuesday</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>Wednesday</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>Thursday</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>Friday</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>Saturday</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="approveLeavePage" class="hidden">
+            <div class="section">
+                <h4>Approve Leave Requests</h4>
+                <table id="leaveRequestsTable" style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr>
+                            <th>Teacher</th>
+                            <th>Date</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaveRequestsBody">
+                        <tr><td colspan="5">Loading leave requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="adjustmentsPage" class="hidden">
+            <div class="section">
+                <h4>Pending Lecture Adjustments</h4>
+                <div class="adjustments-info">
+                    <p>These adjustments were automatically created when teachers requested leave. Assign substitute teachers or mark as resolved.</p>
+                </div>
+                <table id="adjustmentsTable" style="width:100%;border-collapse:collapse;margin-top:20px;">
+                    <thead>
+                        <tr>
+                            <th>Teacher Name</th>
+                            <th>Lecture Details</th>
+                            <th>Date</th>
+                            <th>Reason for Leave</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adjustmentsBody">
+                        <tr><td colspan="6">Loading adjustments...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="inboxPage" class="hidden">
+            <div class="section">
+                <h4>Inbox</h4>
+                <div id="inboxMessages">
+                    <p>No messages in inbox</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="addLecturePage" class="hidden">
+            <div class="add-lecture-form">
+                <h4>Add New Lecture</h4>
+                <form id="addLectureForm">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="subject">Subject:</label>
@@ -60,127 +499,431 @@
                         </div>
                     </div>
                     
-                    <div class="form-group">
-                        
-                        <label for="slot">Time Slot:</label>
-                        <select id="slot" name="slot" required>
-                            <option value="">Select Time Slot</option>
-                            <option value="08:00-09:00">08:00-09:00</option>
-                            <option value="09:00-10:00">09:00-10:00</option>
-                            <option value="10:00-11:00">10:00-11:00</option>
-                            <option value="11:00-12:00">11:00-12:00</option>
-                            <option value="12:00-13:00">12:00-13:00</option>
-                            <option value="13:00-14:00">13:00-14:00</option>
-                            <option value="14:00-15:00">14:00-15:00</option>
-                            <option value="15:00-16:00">15:00-16:00</option>
-                            <option value="16:00-17:00">16:00-17:00</option>
-                        </select>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="slot">Time Slot:</label>
+                            <select id="slot" name="slot" required>
+                                <option value="">Select Time Slot</option>
+                                <option value="09:00-10:00">09:00-10:00</option>
+                                <option value="10:00-11:00">10:00-11:00</option>
+                                <option value="11:00-12:00">11:00-12:00</option>
+                                <option value="12:00-01:00">12:00-01:00</option>
+                                <option value="01:00-02:00">01:00-02:00</option>
+                                <option value="02:00-03:00">02:00-03:00</option>
+                                <option value="03:00-04:00">03:00-04:00</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="teacher">Teacher:</label>
+                            <select id="teacher" name="teacher" required>
+                                <option value="">Select Teacher</option>
+                            </select>
+                        </div>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="teacher">Teacher:</label>
-                        <select id="teacher" name="teacher" required>
-                            <option value="">Select Teacher</option>
-                            <!-- Populated by JS -->
-                        </select>
-                    </div>
-                    
-                    <button type="submit" class="btn-primary">Add Lecture</button>
+                    <button type="submit" class="submit-btn">Add Lecture</button>
                 </form>
-            </section>
-
-            <section class="timetable-section">
-                <h2>Lecture Timetable</h2>
-                <div class="table-container">
-                    <table id="lectureTable">
-                        <thead>
-                            <tr>
-                                <th>Day/Slot</th>
-                                <th>08:00-09:00</th>
-                                <th>09:00-10:00</th>
-                                <th>10:00-11:00</th>
-                                <th>11:00-12:00</th>
-                                <th>12:00-13:00</th>
-                                <th>13:00-14:00</th>
-                                <th>14:00-15:00</th>
-                                <th>15:00-16:00</th>
-                                <th>16:00-17:00</th>
-                            </tr>
-                        </thead>
-                        <tbody id="lectureTableBody">
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section class="calendar-section">
-                <h2>Weekly Calendar View</h2>
-                <div id="calendar"></div>
-            </section>
-            <!-- Leave Requests Section -->
-            <!-- <section class="leave-requests-section">
-                <h2>Handle Leave Requests</h2>
-                <table id="adminLeaveRequestsTable" style="width:100%;border-collapse:collapse;">
-                    <thead>
-                        <tr>
-                            <th>Teacher</th>
-                            <th>Date</th>
-                            <th>Reason</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminLeaveRequestsBody">
-                        <tr><td colspan="5">Loading leave requests...</td></tr>
-                    </tbody>
-                </table>
-            </section> -->
+            </div>
         </div>
     </div>
-
-    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/index.global.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.10/index.global.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/timegrid@6.1.10/index.global.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.10/index.global.min.js'></script>
+    
+    <div id="substituteModal" class="substitute-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>Assign Substitute Teacher</h4>
+                <button class="close-btn" onclick="closeSubstituteModal()">&times;</button>
+            </div>
+            <form id="substituteForm">
+                <div class="form-group">
+                    <label for="substituteTeacher">Select Substitute Teacher:</label>
+                    <select id="substituteTeacher" name="substituteTeacher" required>
+                        <option value="">Select Teacher</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="adjustmentNotes">Notes (Optional):</label>
+                    <textarea id="adjustmentNotes" name="adjustmentNotes" rows="3" placeholder="Add any notes about this substitution..."></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="submit-btn">Assign Substitute</button>
+                    <button type="button" class="submit-btn" style="background: #6c757d;" onclick="closeSubstituteModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
     <script src="script.js"></script>
     <script>
-    // Fetch and populate leave requests for admin
-    document.addEventListener('DOMContentLoaded', function() {
-        fetch('/api/leave-request', { credentials: 'include' })
-            .then(res => res.json())
-            .then(data => {
-                const tbody = document.getElementById('adminLeaveRequestsBody');
-                tbody.innerHTML = '';
-                if (!data.length) {
-                    tbody.innerHTML = '<tr><td colspan="5">No leave requests found.</td></tr>';
-                    return;
-                }
-                data.forEach(req => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${req.teacher || '-'}</td>
-                        <td>${req.date || '-'}</td>
-                        <td>${req.reason || '-'}</td>
-                        <td>${req.status || 'Pending'}</td>
-                        <td>
-                            <button onclick="adminHandleLeaveAction('${req.id}','approved')">Approve</button>
-                            <button onclick="adminHandleLeaveAction('${req.id}','rejected')">Reject</button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+        document.addEventListener('DOMContentLoaded', function() {
+            function updateDateTime() {
+                const now = new Date();
+                document.getElementById('dateToday').textContent = now.toLocaleDateString();
+                document.getElementById('timeNow').textContent = now.toLocaleTimeString();
+            }
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            
+            loadTeachers();
+            
+            loadTimetable();
+            
+            document.getElementById('dashboardNav').addEventListener('click', function() {
+                showPage('dashboardPage');
+                setActiveSidebar('dashboardNav');
             });
-    });
-    function adminHandleLeaveAction(id, action) {
-        fetch(`/api/leave-request/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ status: action })
-        })
-        .then(res => res.json())
-        .then(() => location.reload());
-    }
+            
+            document.getElementById('approveLeaveNav').addEventListener('click', function() {
+                showPage('approveLeavePage');
+                setActiveSidebar('approveLeaveNav');
+                loadLeaveRequests();
+            });
+            
+            document.getElementById('adjustmentsNav').addEventListener('click', function() {
+                showPage('adjustmentsPage');
+                setActiveSidebar('adjustmentsNav');
+                loadAdjustments();
+            });
+            
+            document.getElementById('inboxNav').addEventListener('click', function() {
+                showPage('inboxPage');
+                setActiveSidebar('inboxNav');
+            });
+            
+            document.getElementById('addLectureNav').addEventListener('click', function() {
+                showPage('addLecturePage');
+                setActiveSidebar('addLectureNav');
+            });
+                                    
+            document.getElementById('addTimetableBtn').addEventListener('click', function() {
+                showPage('addLecturePage');
+                setActiveSidebar('addLectureNav');
+            });
+            
+            document.getElementById('teacherSelect').addEventListener('change', function() {
+                filterTimetableByTeacher(this.value);
+            });
+            
+            document.getElementById('addLectureForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                addLecture();
+            });
+            
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                fetch('/logout', { method: 'POST', credentials: 'include' })
+                    .then(() => window.location.href = '/');
+            });
+        });
+        
+        function showPage(pageId) {
+            document.getElementById('dashboardPage').classList.add('hidden');
+            document.getElementById('approveLeavePage').classList.add('hidden');
+            document.getElementById('addLecturePage').classList.add('hidden');
+            document.getElementById('adjustmentsPage').classList.add('hidden');
+            document.getElementById('inboxPage').classList.add('hidden');
+            document.getElementById(pageId).classList.remove('hidden');
+        }
+        
+        function setActiveSidebar(activeId) {
+            document.querySelectorAll('.sidebar ul li').forEach(li => li.classList.remove('active'));
+            document.getElementById(activeId).classList.add('active');
+        }
+        
+        function loadTeachers() {
+            fetch('/api/teachers', { credentials: 'include' })
+                .then(res => res.json())
+                .then(teachers => {
+                    const teacherSelect = document.getElementById('teacherSelect');
+                    const teacherForm = document.getElementById('teacher');
+                    
+                    teachers.forEach(teacher => {
+                        const option = document.createElement('option');
+                        option.value = teacher.username || teacher.email;
+                        option.textContent = teacher.username || teacher.email;
+                        
+                        teacherSelect.appendChild(option.cloneNode(true));
+                        teacherForm.appendChild(option.cloneNode(true));
+                    });
+                })
+                .catch(err => {
+                    console.error('Error loading teachers:', err);
+                    const defaultTeachers = ['Teacher1', 'Teacher2', 'Teacher3'];
+                    defaultTeachers.forEach(teacher => {
+                        const option = document.createElement('option');
+                        option.value = teacher;
+                        option.textContent = teacher;
+                        
+                        document.getElementById('teacherSelect').appendChild(option.cloneNode(true));
+                        document.getElementById('teacher').appendChild(option.cloneNode(true));
+                    });
+                });
+        }
+        
+        function loadTimetable() {
+            fetch('/api/lectures', { credentials: 'include' })
+                .then(res => res.json())
+                .then(lectures => {
+                    populateTimetable(lectures);
+                })
+                .catch(err => {
+                    console.error('Error loading timetable:', err);
+                    const sampleLectures = [
+                        { day: 'Monday', slot: '09:00-10:00', subject: 'WebDAV', room: '1', teacher: 'Teacher1' },
+                        { day: 'Monday', slot: '10:00-11:00', subject: 'webDev', room: '57', teacher: 'Teacher2' },
+                        { day: 'Monday', slot: '11:00-12:00', subject: 'webDev', room: '67', teacher: 'Teacher2' },
+                        { day: 'Monday', slot: '12:00-01:00', subject: 'math', room: '57', teacher: 'Teacher3' },
+                        { day: 'Thursday', slot: '12:00-01:00', subject: 'sst', room: '56', teacher: 'Teacher1' },
+                        { day: 'Thursday', slot: '03:00-04:00', subject: 'eng', room: '56', teacher: 'Teacher2' }
+                    ];
+                    populateTimetable(sampleLectures);
+                });
+        }
+        
+        function populateTimetable(lectures) {
+            const tbody = document.getElementById('timetableBody');
+            const rows = tbody.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                for (let i = 1; i < cells.length; i++) {
+                    cells[i].textContent = '';
+                    cells[i].className = '';
+                }
+            });
+            
+            lectures.forEach(lecture => {
+                const dayIndex = getDayIndex(lecture.day);
+                const slotIndex = getSlotIndex(lecture.slot);
+                
+                if (dayIndex !== -1 && slotIndex !== -1) {
+                    const cell = rows[dayIndex].cells[slotIndex + 1];
+                    cell.textContent = `${lecture.subject} Room:${lecture.room}`;
+                    cell.className = 'lecture-cell';
+                }
+            });
+        }
+        
+        function getDayIndex(day) {
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            return days.indexOf(day);
+        }
+        
+        function getSlotIndex(slot) {
+            const slots = ['09:00-10:00', '10:00-11:00', '11:00-12:00', '12:00-01:00', '01:00-02:00', '02:00-03:00', '03:00-04:00', '04:00-05:00'];
+            return slots.indexOf(slot);
+        }
+        
+        function filterTimetableByTeacher(teacher) {
+            if (!teacher) {
+                loadTimetable();
+                return;
+            }
+            
+            fetch(`/api/lectures?teacher=${teacher}`, { credentials: 'include' })
+                .then(res => res.json())
+                .then(lectures => {
+                    populateTimetable(lectures);
+                })
+                .catch(err => {
+                    console.error('Error filtering lectures:', err);
+                });
+        }
+        
+        function loadLeaveRequests() {
+            fetch('/api/leave-request', { credentials: 'include' })
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('leaveRequestsBody');
+                    tbody.innerHTML = '';
+                    if (!data.length) {
+                        tbody.innerHTML = '<tr><td colspan="5">No leave requests found.</td></tr>';
+                        return;
+                    }
+                    data.forEach(req => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${req.teacher || '-'}</td>
+                            <td>${req.date || '-'}</td>
+                            <td>${req.reason || '-'}</td>
+                            <td>${req.status || 'Pending'}</td>
+                            <td>
+                                <button onclick="handleLeaveAction('${req.id}','approved')" style="background: #27ae60; color: white; border: none; padding: 5px 10px; border-radius: 4px; margin-right: 5px; cursor: pointer;">Approve</button>
+                                <button onclick="handleLeaveAction('${req.id}','rejected')" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Reject</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(err => {
+                    console.error('Error loading leave requests:', err);
+                    document.getElementById('leaveRequestsBody').innerHTML = '<tr><td colspan="5">Error loading leave requests.</td></tr>';
+                });
+        }
+        
+        function handleLeaveAction(id, action) {
+            fetch(`/api/leave-request/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ status: action })
+            })
+            .then(res => res.json())
+            .then(() => {
+                alert(`Leave request ${action} successfully!`);
+                loadLeaveRequests();
+            })
+            .catch(err => {
+                console.error('Error handling leave request:', err);
+                alert('Error handling leave request. Please try again.');
+            });
+        }
+        
+        let currentAdjustmentId = null;
+        
+        function loadAdjustments() {
+            fetch('/api/adjustments', { credentials: 'include' })
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('adjustmentsBody');
+                    tbody.innerHTML = '';
+                    if (!data.length) {
+                        tbody.innerHTML = '<tr><td colspan="6">No pending adjustments found.</td></tr>';
+                        return;
+                    }
+                    data.forEach(adjustment => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${adjustment.teacherName || '-'}</td>
+                            <td>${adjustment.subject} (${adjustment.timeSlot}) - Room ${adjustment.room}</td>
+                            <td>${adjustment.date || '-'}</td>
+                            <td>${adjustment.leaveReason || '-'}</td>
+                            <td>${adjustment.status || 'Pending'}</td>
+                            <td class="adjustment-actions">
+                                <button class="assign-sub-btn" onclick="openSubstituteModal('${adjustment.id}')">Assign Substitute</button>
+                                <button class="resolve-btn" onclick="resolveAdjustment('${adjustment.id}')">Mark Resolved</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(err => {
+                    console.error('Error loading adjustments:', err);
+                    document.getElementById('adjustmentsBody').innerHTML = '<tr><td colspan="6">Error loading adjustments.</td></tr>';
+                });
+        }
+        
+        function openSubstituteModal(adjustmentId) {
+            currentAdjustmentId = adjustmentId;
+            document.getElementById('substituteModal').style.display = 'block';
+            loadTeachersForSubstitute();
+        }
+        
+        function closeSubstituteModal() {
+            document.getElementById('substituteModal').style.display = 'none';
+            document.getElementById('substituteForm').reset();
+            currentAdjustmentId = null;
+        }
+        
+        function loadTeachersForSubstitute() {
+            fetch('/api/teachers', { credentials: 'include' })
+                .then(res => res.json())
+                .then(teachers => {
+                    const select = document.getElementById('substituteTeacher');
+                    select.innerHTML = '<option value="">Select Teacher</option>';
+                    teachers.forEach(teacher => {
+                        const option = document.createElement('option');
+                        option.value = teacher.username || teacher.email;
+                        option.textContent = teacher.username || teacher.email;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(err => {
+                    console.error('Error loading teachers for substitute:', err);
+                });
+        }
+
+        document.getElementById('substituteForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            assignSubstitute();
+        });
+        
+        function assignSubstitute() {
+            const formData = new FormData(document.getElementById('substituteForm'));
+            const substituteData = Object.fromEntries(formData.entries());
+            substituteData.adjustmentId = currentAdjustmentId;
+            
+            fetch('/api/adjustments/assign-substitute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(substituteData)
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Substitute teacher assigned successfully!');
+                    closeSubstituteModal();
+                    loadAdjustments();
+                } else {
+                    alert('Error assigning substitute: ' + result.message);
+                }
+            })
+            .catch(err => {
+                console.error('Error assigning substitute:', err);
+                alert('Error assigning substitute. Please try again.');
+            });
+        }
+        
+        function resolveAdjustment(adjustmentId) {
+            if (confirm('Are you sure you want to mark this adjustment as resolved?')) {
+                fetch(`/api/adjustments/${adjustmentId}/resolve`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.success) {
+                        alert('Adjustment marked as resolved!');
+                        loadAdjustments();
+                    } else {
+                        alert('Error resolving adjustment: ' + result.message);
+                    }
+                })
+                .catch(err => {
+                    console.error('Error resolving adjustment:', err);
+                    alert('Error resolving adjustment. Please try again.');
+                });
+            }
+        }
+        
+        function addLecture() {
+            const formData = new FormData(document.getElementById('addLectureForm'));
+            const lectureData = Object.fromEntries(formData.entries());
+            
+            fetch('/api/lectures', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(lectureData)
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Lecture added successfully!');
+                    document.getElementById('addLectureForm').reset();
+                    loadTimetable();
+                    showPage('dashboardPage');
+                    setActiveSidebar('dashboardNav');
+                } else {
+                    alert('Error adding lecture: ' + (result.message || result.error || 'Unknown error'));
+                }
+            })
+            .catch(err => {
+                console.error('Error adding lecture:', err);
+                alert('Error adding lecture. Please try again.');
+            });
+        }
     </script>
 </body>
 </html> 

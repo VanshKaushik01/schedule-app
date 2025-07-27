@@ -125,9 +125,84 @@
     box-shadow: 0 2px 8px #eee;
      margin-top: 24px;
      }
-     #approveLeaveSection{
-        margin-left: 150px;
-        margin-top: 50px;
+     .leave-request-form {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px #eee;
+        margin-bottom: 24px;
+     }
+     .form-row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 15px;
+     }
+     .form-group {
+        flex: 1;
+     }
+     .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #444;
+     }
+     .form-group input,
+     .form-group textarea {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        box-sizing: border-box;
+     }
+     .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+     }
+     .submit-btn {
+        background: #4f8cff;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        margin-top: 15px;
+     }
+     .submit-btn:hover {
+        background: #3a7bd5;
+     }
+     .my-leave-requests h5 {
+        margin: 24px 0 12px 0;
+        color: #444;
+        font-size: 1.1rem;
+     }
+     #myLeaveRequestsTable {
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        overflow: hidden;
+     }
+     #myLeaveRequestsTable th,
+     #myLeaveRequestsTable td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+     }
+     #myLeaveRequestsTable th {
+        background: #f8f9fa;
+        font-weight: bold;
+     }
+     .status-pending {
+        color: #f39c12;
+        font-weight: bold;
+     }
+     .status-approved {
+        color: #27ae60;
+        font-weight: bold;
+     }
+     .status-rejected {
+        color: #e74c3c;
+        font-weight: bold;
      }
     </style>
 </head>
@@ -137,7 +212,7 @@
         <ul>
             <li class="active" id="dashboardNav">Dashboard</li>
             <li id="calendarNav">Calendar</li>
-            <li class="" id="approveLeaveNav">ApproveLeave</li>
+            <li class="" id="requestLeaveNav">Request Leave</li>
             <li>Inbox</li>
         </ul>
         <div class="current-view">Current View</div>
@@ -158,7 +233,6 @@
                 <button id="logoutBtn" style="margin-left: 16px; background: #e74c3c; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer;">Logout</button>
             </div>
         </div>
-        <!-- DASHBOARD CONTENT -->
         <div id="dashboardPage">
             <div class="summary">
                 <div class="widget total">
@@ -186,26 +260,45 @@
                 <h4>Adjustment Proposals</h4>
                 <div id="adjustmentProposals">Not scheduled yet.</div>
             </div>
-            <!-- Approve Leave Section -->
-            <div class="section" id="approveLeaveSection" style="display:none;">
-                <h4>Approve Leave Requests</h4>
-                <table id="leaveRequestsTable" style="width:100%;border-collapse:collapse;">
-                    <thead>
-                        <tr>
-                            <th>Teacher</th>
-                            <th>Date</th>
-                            <th>Reason</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaveRequestsBody">
-                        <tr><td colspan="5">Loading leave requests...</td></tr>
-                    </tbody>
-                </table>
+        </div>
+        
+        <div id="requestLeavePage" style="display:none;">
+            <div class="section">
+                <h4>Request Leave</h4>
+                <div class="leave-request-form">
+                    <form id="leaveRequestForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="leaveDate">Date of Leave:</label>
+                                <input type="date" id="leaveDate" name="leaveDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="leaveReason">Reason for Leave:</label>
+                                <textarea id="leaveReason" name="leaveReason" rows="4" placeholder="Please provide a detailed reason for your leave request..." required></textarea>
+                            </div>
+                        </div>
+                        <button type="submit" class="submit-btn">Submit Leave Request</button>
+                    </form>
+                </div>
+                
+                <div class="my-leave-requests">
+                    <h5>My Leave Requests</h5>
+                    <table id="myLeaveRequestsTable" style="width:100%;border-collapse:collapse;margin-top:20px;">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Adjustments</th>
+                            </tr>
+                        </thead>
+                        <tbody id="myLeaveRequestsBody">
+                            <tr><td colspan="4">Loading your leave requests...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-        <!-- CALENDAR CONTENT (hidden by default) -->
         <div id="calendarPage" style="display:none;">
             <div id="calendar"></div>
         </div>
@@ -213,7 +306,6 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
     <script src="script.js"></script>
     <script>
-    // Show profile image if available
     document.addEventListener('DOMContentLoaded', function() {
         fetch('/api/me', { credentials: 'include' })
             .then(res => res.json())
@@ -228,61 +320,89 @@
                     document.getElementById('teacherName').textContent = user.username;
                 }
             });
-        // Fetch and populate leave requests
-        fetch('/api/leave-request', { credentials: 'include' })
-            .then(res => res.json())
-            .then(data => {
-                const tbody = document.getElementById('leaveRequestsBody');
-                tbody.innerHTML = '';
-                if (!data.length) {
-                    tbody.innerHTML = '<tr><td colspan="5">No leave requests found.</td></tr>';
-                    return;
-                }
-                data.forEach(req => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${req.teacher || '-'}</td>
-                        <td>${req.date || '-'}</td>
-                        <td>${req.reason || '-'}</td>
-                        <td>${req.status || 'Pending'}</td>
-                        <td>
-                            <button onclick="handleLeaveAction('${req.id}','approved')">Approve</button>
-                            <button onclick="handleLeaveAction('${req.id}','rejected')">Reject</button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            });
-        // Sidebar navigation for ApproveLeave
-        document.getElementById('approveLeaveNav').addEventListener('click', function() {
+
+            loadMyLeaveRequests();
+        document.getElementById('requestLeaveNav').addEventListener('click', function() {
             document.getElementById('dashboardPage').style.display = 'none';
             document.getElementById('calendarPage').style.display = 'none';
-            document.getElementById('approveLeaveSection').style.display = '';
-            setActiveSidebar('approveLeaveNav');
+            document.getElementById('requestLeavePage').style.display = '';
+            setActiveSidebar('requestLeaveNav');
         });
         document.getElementById('dashboardNav').addEventListener('click', function() {
             document.getElementById('dashboardPage').style.display = '';
             document.getElementById('calendarPage').style.display = 'none';
-            document.getElementById('approveLeaveSection').style.display = 'none';
+            document.getElementById('requestLeavePage').style.display = 'none';
             setActiveSidebar('dashboardNav');
         });
         document.getElementById('calendarNav').addEventListener('click', function() {
             document.getElementById('dashboardPage').style.display = 'none';
             document.getElementById('calendarPage').style.display = '';
-            document.getElementById('approveLeaveSection').style.display = 'none';
+            document.getElementById('requestLeavePage').style.display = 'none';
             setActiveSidebar('calendarNav');
         });
+
+        document.getElementById('leaveRequestForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitLeaveRequest();
+        });
     });
-    function handleLeaveAction(id, action) {
-        fetch(`/api/leave-request/${id}`, {
-            method: 'PATCH',
+    
+    function loadMyLeaveRequests() {
+        fetch('/api/my-leave-requests', { credentials: 'include' })
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById('myLeaveRequestsBody');
+                tbody.innerHTML = '';
+                if (!data.length) {
+                    tbody.innerHTML = '<tr><td colspan="4">No leave requests found.</td></tr>';
+                    return;
+                }
+                data.forEach(req => {
+                    const tr = document.createElement('tr');
+                    const statusClass = `status-${req.status || 'pending'}`;
+                    tr.innerHTML = `
+                        <td>${req.date || '-'}</td>
+                        <td>${req.reason || '-'}</td>
+                        <td class="${statusClass}">${req.status || 'Pending'}</td>
+                        <td>${req.adjustments ? req.adjustments.length : 0} adjustments</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                console.error('Error loading leave requests:', err);
+                document.getElementById('myLeaveRequestsBody').innerHTML = '<tr><td colspan="4">Error loading leave requests.</td></tr>';
+            });
+    }
+    
+    function submitLeaveRequest() {
+        const formData = new FormData(document.getElementById('leaveRequestForm'));
+        const leaveData = Object.fromEntries(formData.entries());
+        
+        leaveData.teacher = document.getElementById('teacherName').textContent;
+        
+        fetch('/api/leave-request', {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ status: action })
+            body: JSON.stringify(leaveData)
         })
         .then(res => res.json())
-        .then(() => location.reload());
+        .then(result => {
+            if (result.success) {
+                alert('Leave request submitted successfully! Adjustments will be created automatically.');
+                document.getElementById('leaveRequestForm').reset();
+                loadMyLeaveRequests();
+            } else {
+                alert('Error submitting leave request: ' + result.message);
+            }
+        })
+        .catch(err => {
+            console.error('Error submitting leave request:', err);
+            alert('Error submitting leave request. Please try again.');
+        });
     }
+    
     function setActiveSidebar(activeId) {
         document.querySelectorAll('.sidebar ul li').forEach(li => li.classList.remove('active'));
         document.getElementById(activeId).classList.add('active');

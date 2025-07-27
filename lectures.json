@@ -1,32 +1,64 @@
 {
-  "1752675783498": {
-    "id": 1752675783498,
+  "1753203329740": {
+    "id": 1753203329740,
     "subject": "MERN",
     "room": "1",
     "day": "Wednesday",
-    "date": "2025-07-16",
-    "slot": "08:00-09:00",
-    "teacher": "abhi",
-    "completed": true
-  },
-  "1752739303677": {
-    "id": 1752739303677,
-    "subject": "MERN",
-    "room": "6",
-    "day": "Tuesday",
-    "date": "2025-07-17",
+    "date": "2025-07-23",
     "slot": "08:00-09:00",
     "teacher": "abhi",
     "completed": false
   },
-  "1752739334415": {
-    "id": 1752739334415,
-    "subject": "AI/ML",
-    "room": "6",
-    "day": "Tuesday",
-    "date": "2025-07-17",
+  "1753259005125": {
+    "id": 1753259005125,
+    "subject": "Java",
+    "room": "3",
+    "day": "Wednesday",
+    "date": "2025-07-23",
+    "slot": "10:00-11:00",
+    "teacher": "payal",
+    "completed": true
+  },
+  "1753336258743": {
+    "id": 1753336258743,
+    "subject": "DSA",
+    "room": "1",
+    "day": "Thursday",
+    "date": "2025-07-24",
     "slot": "08:00-09:00",
-    "teacher": "mahesh",
+    "teacher": "jagbir",
+    "completed": false
+  },
+  "1753625129724": {
+    "id": 1753625129724,
+    "subject": "Java",
+    "room": "1",
+    "day": "Monday",
+    "date": "2025-07-28",
+    "slot": "11:00-12:00",
+    "teacher": "payal",
+    "completed": false
+  },
+  "1753628693339": {
+    "id": 1753628693339,
+    "subject": "Java",
+    "room": "1",
+    "day": "",
+    "date": "2025-07-28",
+    "slot": "11:00-12:00",
+    "teacher": "karan",
+    "completed": false,
+    "isSubstitute": true,
+    "originalTeacher": "payal"
+  },
+  "1753629670400": {
+    "id": 1753629670400,
+    "subject": "MERN",
+    "room": "2",
+    "day": "Monday",
+    "date": "2025-07-28",
+    "slot": "09:00-10:00",
+    "teacher": "abhi",
     "completed": false
   }
 }

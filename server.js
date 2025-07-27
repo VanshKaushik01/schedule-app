@@ -15,17 +15,14 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'public/views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Use modular routes
 const { router: authRouter, authenticateJWT, readAdjustments, writeAdjustments } = require('./routes/auth');
 const lecturesRouter = require('./routes/lectures');
 const handleLeaveRouter = require('./routes/handleleave');
 
 app.use('/api', authRouter);        
 app.use('/api/lectures', lecturesRouter);
-app.use('/api/adjustments', handleLeaveRouter);
-app.use('/api/leave-request', handleLeaveRouter);
+app.use('/api', handleLeaveRouter);
 
-// Render EJS pages for main routes
 app.get('/', (req, res) => res.render('index'));
 app.get('/index.ejs', (req, res) => res.render('index'));
 app.get('/signup.ejs', (req, res) => res.render('signup'));
