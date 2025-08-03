@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Schedule Sync - Teacher Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <!-- <link rel="stylesheet" href="teacher.css"> -->
+    <style>
+        body { 
+  margin: 0; 
+  font-family: 'Segoe UI',sans-serif; 
+  background: #f8f9fb;
+ }
+.sidebar { 
+  width: 220px;
+   background: #fff; 
+   height: 100vh;
+    position: fixed;
+     top: 0; left: 0; 
+     box-shadow: 2px 0 8px #eee; 
+  }
+.sidebar h2 {
+   color: #b14ee6;
+    margin: 24px 0 16px 24px; 
+    font-size: 2rem; 
+  }
+.sidebar ul {
+   list-style: none;
+    padding: 0; 
+    margin: 0; 
+  }
+.sidebar ul li { 
+  padding: 16px 24px;
+   color: #444;
+    cursor: pointer; 
+    display: flex;
+     align-items: center; 
+    }
+.sidebar ul li.active, .sidebar ul li:hover {
+   background: #f0e6fa; 
+   color: #b14ee6;
+   }
+.sidebar .current-view { 
+  margin: 32px 0 0 24px; 
+  font-size: 1.1rem; 
+  color: #888; 
+}
+.sidebar .nav-btn { 
+  margin: 12px 24px; 
+  padding: 12px; 
+  border-radius: 8px;
+   border: none; background: #4f8cff;
+    color: #fff;
+     font-weight: bold; 
+     cursor: pointer; 
+    }
+.main { 
+  margin-left: 240px;
+   padding: 32px 40px;
+   }
+.topbar { 
+  display: flex;
+   justify-content: space-between; 
+   align-items: center;
+    margin-bottom: 32px; 
+  }
+.topbar .date-time { color: #444; }
+.topbar .user-info {
+   display: flex;
+    align-items: center;
+     gap: 12px; 
+    }
+.topbar .user-info .icon { 
+  width: 36px;
+   height: 36px;
+    border-radius: 50%; 
+    background: #eee; 
+    display: flex; 
+    align-items: center;
+     justify-content: center;
+      font-size: 1.5rem;
+     }
+.summary {
+   display: flex;
+    gap: 24px;
+     margin-bottom: 32px; 
+    }
+.summary .widget { 
+  flex: 1; 
+  background: #fff;
+   border-radius: 12px; 
+   padding: 24px;
+    box-shadow: 0 2px 8px #eee; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+  }
+.summary .widget h3 {
+   margin: 0 0 8px 0; 
+   font-size: 1.2rem; 
+   color: #888; 
+  }
+.summary .widget .count { 
+  font-size: 2.2rem;
+   font-weight: bold;
+   }
+.summary .widget.total { color: #4f8cff; }
+.summary .widget.left { color: #b14ee6; }
+.summary .widget.done { color: #27ae60; }
+.section {
+   background: #fff; 
+   border-radius: 12px;
+    padding: 24px; 
+    margin-bottom: 24px; 
+    box-shadow: 0 2px 8px #eee;
+   }
+.section h4 { 
+  margin: 0 0 12px 0; 
+}
+
+#calendar { 
+  background: #fff;
+   border-radius: 12px; 
+   padding: 16px;
+    box-shadow: 0 2px 8px #eee;
+     margin-top: 24px;
+     }
+     .leave-request-form {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px #eee;
+        margin-bottom: 24px;
+     }
+     .form-row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 15px;
+     }
+     .form-group {
+        flex: 1;
+     }
+     .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #444;
+     }
+     .form-group input,
+     .form-group textarea {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        box-sizing: border-box;
+     }
+     .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+     }
+     .submit-btn {
+        background: #4f8cff;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        margin-top: 15px;
+     }
+     .submit-btn:hover {
+        background: #3a7bd5;
+     }
+     .my-leave-requests h5 {
+        margin: 24px 0 12px 0;
+        color: #444;
+        font-size: 1.1rem;
+     }
+     #myLeaveRequestsTable {
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        overflow: hidden;
+     }
+     #myLeaveRequestsTable th,
+     #myLeaveRequestsTable td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+     }
+     #myLeaveRequestsTable th {
+        background: #f8f9fa;
+        font-weight: bold;
+     }
+     .status-pending {
+        color: #f39c12;
+        font-weight: bold;
+     }
+     .status-approved {
+        color: #27ae60;
+        font-weight: bold;
+     }
+     .status-rejected {
+        color: #e74c3c;
+        font-weight: bold;
+     }
+     
+     .adjustment-request {
+        background: white;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-left: 4px solid #4f8cff;
+     }
+     
+     .adjustment-request.pending_approval {
+        border-left-color: #f39c12;
+     }
+     
+     .adjustment-request.accepted {
+        border-left-color: #27ae60;
+     }
+     
+     .adjustment-request.rejected {
+        border-left-color: #e74c3c;
+     }
+     
+     .adjustment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+     }
+     
+     .adjustment-header h4 {
+        margin: 0;
+        color: #333;
+     }
+     
+     .adjustment-date {
+        color: #666;
+        font-size: 0.9rem;
+     }
+     
+     .adjustment-details p {
+        margin: 4px 0;
+        color: #555;
+     }
+     
+     .adjustment-actions {
+        margin-top: 12px;
+        display: flex;
+        gap: 8px;
+     }
+     
+     .btn-accept {
+        background: #27ae60;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+     }
+     
+     .btn-reject {
+        background: #e74c3c;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+     }
+     
+     .adjustment-status {
+        margin-top: 12px;
+        padding: 8px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        font-size: 0.9rem;
+     }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Schedule Sync</h2>
+        <ul>
+            <li class="active" id="dashboardNav">Dashboard</li>
+            <li id="calendarNav">Calendar</li>
+            <li class="" id="requestLeaveNav">Request Leave</li>
+            <li id="inboxNav">Inbox</li>
+        </ul>
+        <div class="current-view">Current View</div>
+        <button class="nav-btn" id="meetingBtn">Meeting</button>
+        <button class="nav-btn" id="schedulingBtn">Scheduling</button>
+        <button class="nav-btn" id="upcomingBtn">Upcoming Event</button>
+    </div>
+    <div class="main">
+        <div class="topbar">
+            <div>
+                <div class="date-time" id="dateToday"></div>
+                <div class="date-time" id="timeNow"></div>
+            </div>
+            <div class="user-info">
+                <span id="teacherName"></span>
+                <img id="teacherProfileImage" src="" alt="Profile Image" style="display:none;width:36px;height:36px;border-radius:50%;object-fit:cover;">
+                <span class="icon" id="teacherIcon">👤</span>
+                <button id="logoutBtn" style="margin-left: 16px; background: #e74c3c; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer;">Logout</button>
+            </div>
+        </div>
+        <div id="dashboardPage">
+            <div class="summary">
+                <div class="widget total">
+                    <h3>Total Lectures</h3>
+                    <div class="count" id="totalLectures">0</div>
+                </div>
+                <div class="widget left">
+                    <h3>Total Left</h3>
+                    <div class="count" id="lecturesLeft">0</div>
+                </div>
+                <div class="widget done">
+                    <h3>Total Done</h3>
+                    <div class="count" id="lecturesDone">0</div>
+                </div>
+            </div>
+            <div class="section">
+                <h4>Upcoming Adjustments</h4>
+                <div id="upcomingAdjustments">No adjustments scheduled yet.</div>
+            </div>
+            <div class="section">
+                <h4>Today's Schedules</h4>
+                <div id="todaysSchedules">Upcoming soon...</div>
+            </div>
+            <div class="section">
+                <h4>Adjustment Requests</h4>
+                <div id="adjustmentRequests">Loading adjustment requests...</div>
+            </div>
+            <div class="section">
+                <h4>Notifications</h4>
+                <div id="notificationsContainer">Loading notifications...</div>
+            </div>
+        </div>
+        
+        <div id="requestLeavePage" style="display:none;">
+            <div class="section">
+                <h4>Request Leave</h4>
+                <div class="leave-request-form">
+                    <form id="leaveRequestForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="leaveDate">Date of Leave:</label>
+                                <input type="date" id="leaveDate" name="leaveDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="leaveReason">Reason for Leave:</label>
+                                <textarea id="leaveReason" name="leaveReason" rows="4" placeholder="Please provide a detailed reason for your leave request..." required></textarea>
+                            </div>
+                        </div>
+                        <button type="submit" class="submit-btn">Submit Leave Request</button>
+                    </form>
+                </div>
+                
+                <div class="my-leave-requests">
+                    <h5>My Leave Requests</h5>
+                    <table id="myLeaveRequestsTable" style="width:100%;border-collapse:collapse;margin-top:20px;">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Lectures</th>
+                                <th>Substitute Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="myLeaveRequestsBody">
+                            <tr><td colspan="4">Loading your leave requests...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div id="calendarPage" style="display:none;">
+            <div id="calendar"></div>
+        </div>
+        <div id="inboxPage" style="display:none;">
+            <div class="section">
+                <h4>Notifications & Messages</h4>
+                <div id="notificationsContainer">Loading notifications...</div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <script src="script.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('/api/me', { credentials: 'include' })
+            .then(res => res.json())
+            .then(user => {
+                if (user.profileImage) {
+                    const img = document.getElementById('teacherProfileImage');
+                    img.src = user.profileImage;
+                    img.style.display = 'inline-block';
+                    document.getElementById('teacherIcon').style.display = 'none';
+                }
+                if (user.username) {
+                    document.getElementById('teacherName').textContent = user.username;
+                }
+            });
+
+            loadMyLeaveRequests();
+        document.getElementById('requestLeaveNav').addEventListener('click', function() {
+            document.getElementById('dashboardPage').style.display = 'none';
+            document.getElementById('calendarPage').style.display = 'none';
+            document.getElementById('requestLeavePage').style.display = '';
+            document.getElementById('inboxPage').style.display = 'none';
+            setActiveSidebar('requestLeaveNav');
+        });
+        document.getElementById('dashboardNav').addEventListener('click', function() {
+            document.getElementById('dashboardPage').style.display = '';
+            document.getElementById('calendarPage').style.display = 'none';
+            document.getElementById('requestLeavePage').style.display = 'none';
+            document.getElementById('inboxPage').style.display = 'none';
+            setActiveSidebar('dashboardNav');
+        });
+        document.getElementById('calendarNav').addEventListener('click', function() {
+            document.getElementById('dashboardPage').style.display = 'none';
+            document.getElementById('calendarPage').style.display = '';
+            document.getElementById('requestLeavePage').style.display = 'none';
+            document.getElementById('inboxPage').style.display = 'none';
+            setActiveSidebar('calendarNav');
+        });
+        
+        document.getElementById('inboxNav').addEventListener('click', function() {
+            document.getElementById('dashboardPage').style.display = 'none';
+            document.getElementById('calendarPage').style.display = 'none';
+            document.getElementById('requestLeavePage').style.display = 'none';
+            document.getElementById('inboxPage').style.display = '';
+            setActiveSidebar('inboxNav');
+            renderNotifications();
+        });
+
+        document.getElementById('leaveRequestForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitLeaveRequest();
+        });
+    });
+    
+    function loadMyLeaveRequests() {
+        fetch('/api/my-leave-requests', { credentials: 'include' })
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById('myLeaveRequestsBody');
+                tbody.innerHTML = '';
+                if (!data.length) {
+                    tbody.innerHTML = '<tr><td colspan="5">No leave requests found.</td></tr>';
+                    return;
+                }
+                data.forEach(req => {
+                    const tr = document.createElement('tr');
+                    const statusClass = `status-${req.status || 'pending'}`;
+                    const formattedDate = req.date ? new Date(req.date).toLocaleDateString() : '-';
+                    
+                    // Generate substitute summary
+                    let substituteInfo = 'No lectures';
+                    if (req.adjustments && req.adjustments.length > 0) {
+                        const assigned = req.adjustments.filter(adj => adj.substituteTeacher);
+                        const notAssigned = req.adjustments.filter(adj => !adj.substituteTeacher);
+                        substituteInfo = `${assigned.length} assigned, ${notAssigned.length} unassigned`;
+                    }
+                    
+                    tr.innerHTML = `
+                        <td>${formattedDate}</td>
+                        <td>${req.reason || '-'}</td>
+                        <td class="${statusClass}">${req.status || 'Pending'}</td>
+                        <td>${req.adjustments ? req.adjustments.length : 0} lectures</td>
+                        <td>${substituteInfo}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                console.error('Error loading leave requests:', err);
+                document.getElementById('myLeaveRequestsBody').innerHTML = '<tr><td colspan="5">Error loading leave requests.</td></tr>';
+            });
+    }
+    
+    function submitLeaveRequest() {
+        const formData = new FormData(document.getElementById('leaveRequestForm'));
+        const leaveData = Object.fromEntries(formData.entries());
+        
+        leaveData.teacher = document.getElementById('teacherName').textContent;
+        console.log('Submitting leave request:', leaveData);
+        
+        fetch('/api/leave-request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(leaveData)
+        })
+        .then(res => {
+            console.log('Response status:', res.status);
+            return res.json();
+        })
+        .then(result => {
+            console.log('Response result:', result);
+            if (result.success) {
+                alert('Leave request submitted successfully! Adjustments will be created automatically.');
+                document.getElementById('leaveRequestForm').reset();
+                loadMyLeaveRequests();
+            } else {
+                alert('Error submitting leave request: ' + (result.message || result.error));
+            }
+        })
+        .catch(err => {
+            console.error('Error submitting leave request:', err);
+            alert('Error submitting leave request. Please try again.');
+        });
+    }
+    
+    function setActiveSidebar(activeId) {
+        document.querySelectorAll('.sidebar ul li').forEach(li => li.classList.remove('active'));
+        document.getElementById(activeId).classList.add('active');
+    }
+    </script>
+</body>
+</html>

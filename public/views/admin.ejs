@@ -153,6 +153,21 @@
             background: #e8f5e8 !important;
             font-weight: bold;
         }
+        .completed-lecture {
+            background: #f0f0f0 !important;
+            opacity: 0.7;
+        }
+        .completed-lecture .lecture-info {
+            color: #666;
+        }
+        .completed-mark {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .lecture-info {
+            font-size: 12px;
+            line-height: 1.3;
+        }
         .add-lecture-form {
             background: white;
             border-radius: 12px;
@@ -307,6 +322,7 @@
             </div>
         </div>
         
+        <div id="dashboardPage">
                 <div class="timetable-header">
                 <div class="teacher-selector">
                     <label for="teacherSelect">Select Teacher:</label>
@@ -409,15 +425,16 @@
             <div class="section">
                 <h4>Approve Leave Requests</h4>
                 <table id="leaveRequestsTable" style="width:100%;border-collapse:collapse;">
-                    <thead>
-                        <tr>
-                            <th>Teacher</th>
-                            <th>Date</th>
-                            <th>Reason</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
+                                            <thead>
+                            <tr>
+                                <th>Teacher</th>
+                                <th>Date</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Substitute Summary</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
                     <tbody id="leaveRequestsBody">
                         <tr><td colspan="5">Loading leave requests...</td></tr>
                     </tbody>
@@ -444,6 +461,28 @@
                     </thead>
                     <tbody id="adjustmentsBody">
                         <tr><td colspan="6">Loading adjustments...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="section">
+                <h4>Rejected Adjustments</h4>
+                <div class="adjustments-info">
+                    <p>These adjustments were rejected by substitute teachers. You can reassign them to different teachers.</p>
+                </div>
+                <table id="rejectedAdjustmentsTable" style="width:100%;border-collapse:collapse;margin-top:20px;">
+                    <thead>
+                        <tr>
+                            <th>Original Teacher</th>
+                            <th>Lecture Details</th>
+                            <th>Date</th>
+                            <th>Rejected By</th>
+                            <th>Rejection Reason</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rejectedAdjustmentsBody">
+                        <tr><td colspan="6">Loading rejected adjustments...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -552,8 +591,33 @@
         </div>
     </div>
     
+    <div id="reassignModal" class="substitute-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>Reassign Adjustment</h4>
+                <button class="close-btn" onclick="closeReassignModal()">&times;</button>
+            </div>
+            <form id="reassignForm">
+                <div class="form-group">
+                    <label for="newSubstituteTeacher">Select New Substitute Teacher:</label>
+                    <select id="newSubstituteTeacher" name="newSubstituteTeacher" required>
+                        <option value="">Select Teacher</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="reassignNotes">Notes (Optional):</label>
+                    <textarea id="reassignNotes" name="reassignNotes" rows="3" placeholder="Add any notes about this reassignment..."></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="submit-btn">Reassign</button>
+                    <button type="button" class="submit-btn" style="background: #6c757d;" onclick="closeReassignModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-    <script src="script.js"></script>
+    <!-- <script src="script.js"></script> -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             function updateDateTime() {
@@ -609,6 +673,40 @@
                 addLecture();
             });
             
+            // Add subject change listener to filter teachers
+            const subjectSelect = document.getElementById('subject');
+            const teacherSelect = document.getElementById('teacher');
+            if (subjectSelect && teacherSelect) {
+                subjectSelect.addEventListener('change', function() {
+                    const selectedSubject = subjectSelect.value;
+                    if (!selectedSubject) {
+                        teacherSelect.innerHTML = '<option value="">Select Teacher</option>';
+                        return;
+                    }
+                    
+                    fetch(`/api/lectures/teachers-by-subject?subject=${encodeURIComponent(selectedSubject)}`, { credentials: 'include' })
+                        .then(res => res.json())
+                        .then(response => {
+                            const teachers = response.teachers || response;
+                            teacherSelect.innerHTML = '<option value="">Select Teacher</option>';
+                            teachers.forEach(teacher => {
+                                const option = document.createElement('option');
+                                option.value = teacher.username;
+                                option.textContent = teacher.username;
+                                teacherSelect.appendChild(option);
+                            });
+                            
+                            if (response.message) {
+                                console.log(response.message);
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Error loading teachers by subject:', err);
+                            teacherSelect.innerHTML = '<option value="">No teachers found</option>';
+                        });
+                });
+            }
+            
             document.getElementById('logoutBtn').addEventListener('click', function() {
                 fetch('/logout', { method: 'POST', credentials: 'include' })
                     .then(() => window.location.href = '/');
@@ -616,12 +714,20 @@
         });
         
         function showPage(pageId) {
-            document.getElementById('dashboardPage').classList.add('hidden');
-            document.getElementById('approveLeavePage').classList.add('hidden');
-            document.getElementById('addLecturePage').classList.add('hidden');
-            document.getElementById('adjustmentsPage').classList.add('hidden');
-            document.getElementById('inboxPage').classList.add('hidden');
-            document.getElementById(pageId).classList.remove('hidden');
+            const pages = ['dashboardPage', 'approveLeavePage', 'addLecturePage', 'adjustmentsPage', 'inboxPage'];
+            pages.forEach(page => {
+                const element = document.getElementById(page);
+                if (element) {
+                    element.classList.add('hidden');
+                }
+            });
+            
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.classList.remove('hidden');
+            } else {
+                console.error(`Page with id '${pageId}' not found`);
+            }
         }
         
         function setActiveSidebar(activeId) {
@@ -636,13 +742,17 @@
                     const teacherSelect = document.getElementById('teacherSelect');
                     const teacherForm = document.getElementById('teacher');
                     
+                    // Clear existing options
+                    teacherSelect.innerHTML = '<option value="">All Teachers</option>';
+                    teacherForm.innerHTML = '<option value="">Select Teacher</option>';
+                    
                     teachers.forEach(teacher => {
                         const option = document.createElement('option');
                         option.value = teacher.username || teacher.email;
                         option.textContent = teacher.username || teacher.email;
                         
                         teacherSelect.appendChild(option.cloneNode(true));
-                        teacherForm.appendChild(option.cloneNode(true));
+                        // Don't populate teacherForm here - it will be populated based on subject selection
                     });
                 })
                 .catch(err => {
@@ -654,7 +764,6 @@
                         option.textContent = teacher;
                         
                         document.getElementById('teacherSelect').appendChild(option.cloneNode(true));
-                        document.getElementById('teacher').appendChild(option.cloneNode(true));
                     });
                 });
         }
@@ -683,6 +792,7 @@
             const tbody = document.getElementById('timetableBody');
             const rows = tbody.querySelectorAll('tr');
             
+            // Clear all cells
             rows.forEach(row => {
                 const cells = row.querySelectorAll('td');
                 for (let i = 1; i < cells.length; i++) {
@@ -697,8 +807,17 @@
                 
                 if (dayIndex !== -1 && slotIndex !== -1) {
                     const cell = rows[dayIndex].cells[slotIndex + 1];
-                    cell.textContent = `${lecture.subject} Room:${lecture.room}`;
-                    cell.className = 'lecture-cell';
+                    const isCompleted = lecture.completed;
+                    
+                    cell.innerHTML = `
+                        <div class="lecture-info ${isCompleted ? 'completed' : ''}">
+                            <strong>${lecture.subject}</strong><br>
+                            Room: ${lecture.room}<br>
+                            Teacher: ${lecture.teacher}
+                            ${isCompleted ? '<br><span class="completed-mark">✅ Completed</span>' : ''}
+                        </div>
+                    `;
+                    cell.className = `lecture-cell ${isCompleted ? 'completed-lecture' : ''}`;
                 }
             });
         }
@@ -733,22 +852,40 @@
             fetch('/api/leave-request', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
+                    console.log('Loaded leave requests:', data);
                     const tbody = document.getElementById('leaveRequestsBody');
                     tbody.innerHTML = '';
                     if (!data.length) {
-                        tbody.innerHTML = '<tr><td colspan="5">No leave requests found.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="6">No leave requests found.</td></tr>';
                         return;
                     }
                     data.forEach(req => {
                         const tr = document.createElement('tr');
+                        const formattedDate = req.date ? new Date(req.date).toLocaleDateString() : '-';
+                        const status = req.status || 'pending';
+                        
+                           let substituteSummary = 'No lectures';
+                        if (req.substituteSummary) {
+                            const { assigned, notAssigned, total } = req.substituteSummary;
+                            substituteSummary = `${assigned}/${total} assigned`;
+                            if (notAssigned > 0) {
+                                substituteSummary += ` (${notAssigned} unassigned)`;
+                            }
+                        }
+                        
+                        const actionButtons = status === 'pending' ? 
+                            `<button onclick="handleLeaveAction('${req._id}','approved')" style="background: #27ae60; color: white; border: none; padding: 5px 10px; border-radius: 4px; margin-right: 5px; cursor: pointer;">Approve</button>
+                             <button onclick="handleLeaveAction('${req._id}','rejected')" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Reject</button>` :
+                            `<span style="color: ${status === 'approved' ? '#27ae60' : '#e74c3c'}; font-weight: bold;">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
+                        
                         tr.innerHTML = `
                             <td>${req.teacher || '-'}</td>
-                            <td>${req.date || '-'}</td>
+                            <td>${formattedDate}</td>
                             <td>${req.reason || '-'}</td>
-                            <td>${req.status || 'Pending'}</td>
+                            <td>${status.charAt(0).toUpperCase() + status.slice(1)}</td>
+                            <td>${substituteSummary}</td>
                             <td>
-                                <button onclick="handleLeaveAction('${req.id}','approved')" style="background: #27ae60; color: white; border: none; padding: 5px 10px; border-radius: 4px; margin-right: 5px; cursor: pointer;">Approve</button>
-                                <button onclick="handleLeaveAction('${req.id}','rejected')" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Reject</button>
+                                ${actionButtons}
                             </td>
                         `;
                         tbody.appendChild(tr);
@@ -756,21 +893,30 @@
                 })
                 .catch(err => {
                     console.error('Error loading leave requests:', err);
-                    document.getElementById('leaveRequestsBody').innerHTML = '<tr><td colspan="5">Error loading leave requests.</td></tr>';
+                    document.getElementById('leaveRequestsBody').innerHTML = '<tr><td colspan="6">Error loading leave requests.</td></tr>';
                 });
         }
         
         function handleLeaveAction(id, action) {
+            console.log('Handling leave action:', { id, action });
             fetch(`/api/leave-request/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 body: JSON.stringify({ status: action })
             })
-            .then(res => res.json())
-            .then(() => {
-                alert(`Leave request ${action} successfully!`);
-                loadLeaveRequests();
+            .then(res => {
+                console.log('Response status:', res.status);
+                return res.json();
+            })
+            .then(result => {
+                console.log('Response result:', result);
+                if (result.success) {
+                    alert(`Leave request ${action} successfully!`);
+                    loadLeaveRequests();
+                } else {
+                    alert('Error: ' + (result.error || 'Unknown error'));
+                }
             })
             .catch(err => {
                 console.error('Error handling leave request:', err);
@@ -780,7 +926,7 @@
         
         let currentAdjustmentId = null;
         
-        function loadAdjustments() {
+            function loadAdjustments() {
             fetch('/api/adjustments', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
@@ -792,15 +938,19 @@
                     }
                     data.forEach(adjustment => {
                         const tr = document.createElement('tr');
+                        tr.setAttribute('data-adjustment-id', adjustment._id);
+                        tr.setAttribute('data-subject', adjustment.subject);
+                        tr.setAttribute('data-slot', adjustment.slot);
+                        tr.setAttribute('data-date', adjustment.date);
                         tr.innerHTML = `
-                            <td>${adjustment.teacherName || '-'}</td>
-                            <td>${adjustment.subject} (${adjustment.timeSlot}) - Room ${adjustment.room}</td>
-                            <td>${adjustment.date || '-'}</td>
+                            <td>${adjustment.teacher || '-'}</td>
+                            <td>${adjustment.subject} (${adjustment.slot}) - Room ${adjustment.room}</td>
+                            <td>${adjustment.date ? new Date(adjustment.date).toLocaleDateString() : '-'}</td>
                             <td>${adjustment.leaveReason || '-'}</td>
                             <td>${adjustment.status || 'Pending'}</td>
                             <td class="adjustment-actions">
-                                <button class="assign-sub-btn" onclick="openSubstituteModal('${adjustment.id}')">Assign Substitute</button>
-                                <button class="resolve-btn" onclick="resolveAdjustment('${adjustment.id}')">Mark Resolved</button>
+                                <button class="assign-sub-btn" onclick="openSubstituteModal('${adjustment._id}')">Assign Substitute</button>
+                                <button class="resolve-btn" onclick="resolveAdjustment('${adjustment._id}')">Mark Resolved</button>
                             </td>
                         `;
                         tbody.appendChild(tr);
@@ -810,41 +960,205 @@
                     console.error('Error loading adjustments:', err);
                     document.getElementById('adjustmentsBody').innerHTML = '<tr><td colspan="6">Error loading adjustments.</td></tr>';
                 });
+            
+            // Also load rejected adjustments
+            loadRejectedAdjustments();
         }
         
-        function openSubstituteModal(adjustmentId) {
+        function loadRejectedAdjustments() {
+            fetch('/api/rejected-adjustments', { credentials: 'include' })
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('rejectedAdjustmentsBody');
+                    tbody.innerHTML = '';
+                    if (!data.length) {
+                        tbody.innerHTML = '<tr><td colspan="6">No rejected adjustments found.</td></tr>';
+                        return;
+                    }
+                    data.forEach(adjustment => {
+                        const tr = document.createElement('tr');
+                        tr.setAttribute('data-adjustment-id', adjustment._id);
+                        tr.setAttribute('data-subject', adjustment.subject);
+                        tr.setAttribute('data-slot', adjustment.slot);
+                        tr.setAttribute('data-date', adjustment.date);
+                        const formattedDate = adjustment.date ? new Date(adjustment.date).toLocaleDateString() : '-';
+                        const respondedAt = adjustment.respondedAt ? new Date(adjustment.respondedAt).toLocaleDateString() : '-';
+                        
+                        tr.innerHTML = `
+                            <td>${adjustment.teacher || '-'}</td>
+                            <td>${adjustment.subject} (${adjustment.slot}) - Room ${adjustment.room}</td>
+                            <td>${formattedDate}</td>
+                            <td>${adjustment.substituteTeacher || '-'}</td>
+                            <td>${adjustment.responseReason || 'No reason provided'}</td>
+                            <td class="adjustment-actions">
+                                <button class="assign-sub-btn" onclick="openReassignModal('${adjustment._id}')">Reassign</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(err => {
+                    console.error('Error loading rejected adjustments:', err);
+                    document.getElementById('rejectedAdjustmentsBody').innerHTML = '<tr><td colspan="6">Error loading rejected adjustments.</td></tr>';
+                });
+        }
+        
+    function openSubstituteModal(adjustmentId) {
             currentAdjustmentId = adjustmentId;
             document.getElementById('substituteModal').style.display = 'block';
-            loadTeachersForSubstitute();
+            
+            // Get the adjustment row to extract subject
+            const adjustmentRow = document.querySelector(`[data-adjustment-id="${adjustmentId}"]`);
+            if (adjustmentRow) {
+                const subject = adjustmentRow.getAttribute('data-subject');
+                loadTeachersForSubstitute(subject);
+            } else {
+                loadTeachersForSubstitute();
+            }
         }
         
-        function closeSubstituteModal() {
+            function closeSubstituteModal() {
             document.getElementById('substituteModal').style.display = 'none';
             document.getElementById('substituteForm').reset();
             currentAdjustmentId = null;
         }
         
-        function loadTeachersForSubstitute() {
-            fetch('/api/teachers', { credentials: 'include' })
+        function openReassignModal(adjustmentId) {
+            currentAdjustmentId = adjustmentId;
+            document.getElementById('reassignModal').style.display = 'block';
+            
+            // Get the adjustment row to extract subject
+            const adjustmentRow = document.querySelector(`[data-adjustment-id="${adjustmentId}"]`);
+            if (adjustmentRow) {
+                const subject = adjustmentRow.getAttribute('data-subject');
+                loadTeachersForReassign(subject);
+            } else {
+                loadTeachersForReassign();
+            }
+        }
+        
+        function closeReassignModal() {
+            document.getElementById('reassignModal').style.display = 'none';
+            document.getElementById('reassignForm').reset();
+            currentAdjustmentId = null;
+        }
+        
+        function loadTeachersForSubstitute(subject) {
+            // Get the current adjustment to get the date and slot
+            if (!currentAdjustmentId) {
+                console.error('No current adjustment ID');
+                return;
+            }
+            
+            // Find the adjustment details from the table
+            const adjustmentRow = document.querySelector(`[data-adjustment-id="${currentAdjustmentId}"]`);
+            if (!adjustmentRow) {
+                console.error('Adjustment row not found');
+                return;
+            }
+            
+            // Get date and slot from data attributes
+            const slot = adjustmentRow.getAttribute('data-slot');
+            const date = adjustmentRow.getAttribute('data-date');
+            
+            // Build URL with subject, date, and slot parameters
+            let url = '/api/teachers';
+            const params = new URLSearchParams();
+            if (subject) params.append('subject', subject);
+            if (date) params.append('date', date);
+            if (slot) params.append('slot', slot);
+            
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+            
+            fetch(url, { credentials: 'include' })
                 .then(res => res.json())
                 .then(teachers => {
                     const select = document.getElementById('substituteTeacher');
                     select.innerHTML = '<option value="">Select Teacher</option>';
+                    
+                    if (teachers.length === 0) {
+                        select.innerHTML = '<option value="">No teachers available</option>';
+                        return;
+                    }
+                    
                     teachers.forEach(teacher => {
                         const option = document.createElement('option');
                         option.value = teacher.username || teacher.email;
-                        option.textContent = teacher.username || teacher.email;
+                        option.textContent = `${teacher.username || teacher.email} (${teacher.subject || 'Unknown Subject'})`;
                         select.appendChild(option);
                     });
                 })
                 .catch(err => {
                     console.error('Error loading teachers for substitute:', err);
+                    const select = document.getElementById('substituteTeacher');
+                    select.innerHTML = '<option value="">Error loading teachers</option>';
+                });
+        }
+        
+        function loadTeachersForReassign(subject) {
+            // Get the current adjustment to get the date and slot
+            if (!currentAdjustmentId) {
+                console.error('No current adjustment ID');
+                return;
+            }
+            
+            // Find the adjustment details from the table
+            const adjustmentRow = document.querySelector(`[data-adjustment-id="${currentAdjustmentId}"]`);
+            if (!adjustmentRow) {
+                console.error('Adjustment row not found');
+                return;
+            }
+            
+            // Get date and slot from data attributes
+            const slot = adjustmentRow.getAttribute('data-slot');
+            const date = adjustmentRow.getAttribute('data-date');
+            
+            // Build URL with subject, date, and slot parameters
+            let url = '/api/teachers';
+            const params = new URLSearchParams();
+            if (subject) params.append('subject', subject);
+            if (date) params.append('date', date);
+            if (slot) params.append('slot', slot);
+            
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+            
+            fetch(url, { credentials: 'include' })
+                .then(res => res.json())
+                .then(teachers => {
+                    const select = document.getElementById('newSubstituteTeacher');
+                    select.innerHTML = '<option value="">Select Teacher</option>';
+                    
+                    if (teachers.length === 0) {
+                        select.innerHTML = '<option value="">No teachers available</option>';
+                        return;
+                    }
+                    
+                    teachers.forEach(teacher => {
+                        const option = document.createElement('option');
+                        option.value = teacher.username || teacher.email;
+                        option.textContent = `${teacher.username || teacher.email} (${teacher.subject || 'Unknown Subject'})`;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(err => {
+                    console.error('Error loading teachers for reassignment:', err);
+                    const select = document.getElementById('newSubstituteTeacher');
+                    select.innerHTML = '<option value="">Error loading teachers</option>';
                 });
         }
 
         document.getElementById('substituteForm').addEventListener('submit', function(e) {
             e.preventDefault();
             assignSubstitute();
+        });
+        
+        document.getElementById('reassignForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            reassignAdjustment();
         });
         
         function assignSubstitute() {
@@ -871,6 +1185,33 @@
             .catch(err => {
                 console.error('Error assigning substitute:', err);
                 alert('Error assigning substitute. Please try again.');
+            });
+        }
+        
+        function reassignAdjustment() {
+            const formData = new FormData(document.getElementById('reassignForm'));
+            const reassignData = Object.fromEntries(formData.entries());
+            reassignData.adjustmentId = currentAdjustmentId;
+            
+            fetch('/api/adjustments/reassign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(reassignData)
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Adjustment reassigned successfully!');
+                    closeReassignModal();
+                    loadAdjustments();
+                } else {
+                    alert('Error reassigning adjustment: ' + result.message);
+                }
+            })
+            .catch(err => {
+                console.error('Error reassigning adjustment:', err);
+                alert('Error reassigning adjustment. Please try again.');
             });
         }
         
